@@ -26,14 +26,15 @@ abstract class AbstractTest {
     }
 }
 
+data class Foo(val name: String)
+data class FooCreatedEvent(val foo: Foo)
 data class EventMetadata(val occurredAt: OffsetDateTime?, val traceId: String?)
-
-data class FooEvent(val metadata: EventMetadata? = null, val data: Foo) : Event {
-
+data class FooCreatedKinesisEvent(val metadata: EventMetadata, val data: FooCreatedEvent) : KinesisEvent<FooCreatedEvent, EventMetadata> {
     companion object {
         const val STREAM_NAME = "foo-event-stream"
     }
 
+    override fun data() = data
+    override fun metadata() = metadata
     override fun streamName() = STREAM_NAME
 }
-data class Foo(val foo: String)

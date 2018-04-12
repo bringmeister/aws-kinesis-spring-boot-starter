@@ -31,9 +31,9 @@ class AwsKinesisRecordProcessorTest {
         on { maxRetries } doReturn 1
         on { backoffTimeInMilliSeconds } doReturn 1
     }
-    val eventProcessor = mock<EventProcessor<FooEvent>> { }
+    val eventProcessor = mock<EventProcessor<FooCreatedEvent>> { }
 
-    val unit = AwsKinesisRecordProcessor(objectMapper, configuration, FooEvent::class.java, eventProcessor)
+    val unit = AwsKinesisRecordProcessor(objectMapper, configuration, FooCreatedKinesisEvent::class.java, eventProcessor)
 
     @Before
     fun setUp() {
@@ -45,119 +45,129 @@ class AwsKinesisRecordProcessorTest {
 
     @Test
     fun `should deserialize one record`() {
-        val payload = """{"data":"{"foo":"any-value"}"}"""
+        val kinesisEvent = """{"data":"{"name":"any-value"}"}"""
 
-        unit.processRecords(wrap(payload))
+        unit.processRecords(wrap(kinesisEvent))
 
-        verify(objectMapper).readValue(payload, FooEvent::class.java)
+        verify(objectMapper).readValue(kinesisEvent, FooCreatedKinesisEvent::class.java)
+    }
+
+    @Test
+    fun `should deserialize one record with metadata`() {
+        val kinesisEvent = """{"metadata":"{"anything":"any-metadata"}", "data":"{"name":"any-value"}"}"""
+
+        unit.processRecords(wrap(kinesisEvent))
+
+        verify(objectMapper).readValue(kinesisEvent, FooCreatedKinesisEvent::class.java)
     }
 
     @Test
     fun `should deserialize all records`() {
-        val onePayload = """{"data":"{"foo":"any-value"}"}"""
-        val anotherPayload = """{"data":"{"foo":"any-other-value"}"}"""
+        val oneKinesisEvent = """{"data":"{"name":"any-value"}"}"""
+        val anotherKinesisEvent = """{"data":"{"name":"any-other-value"}"}"""
 
-        unit.processRecords(wrap(onePayload, anotherPayload))
+        unit.processRecords(wrap(oneKinesisEvent, anotherKinesisEvent))
 
-        verify(objectMapper).readValue(onePayload, FooEvent::class.java)
-        verify(objectMapper).readValue(anotherPayload, FooEvent::class.java)
+        verify(objectMapper).readValue(oneKinesisEvent, FooCreatedKinesisEvent::class.java)
+        verify(objectMapper).readValue(anotherKinesisEvent, FooCreatedKinesisEvent::class.java)
     }
 
     @Test
-    fun `should delegate one event to event processor`() {
-        val (payload, event) = Pair("""{"data":"{"foo":"any-value"}"}""", FooEvent(data = Foo("any-value")))
-        whenever(objectMapper.readValue(payload, FooEvent::class.java)).thenReturn(event)
+    fun `should delegate kinesis event payload to event processor`() {
+        val (kinesisEvent, kinesisEventInstance) = eventPair()
+        whenever(objectMapper.readValue(kinesisEvent, FooCreatedKinesisEvent::class.java)).thenReturn(kinesisEventInstance)
 
-        unit.processRecords(wrap(payload))
+        unit.processRecords(wrap(kinesisEvent))
 
-        verify(eventProcessor).invoke(event)
+        verify(eventProcessor).invoke(kinesisEventInstance.data)
     }
 
     @Test
-    fun `should delegate all events to event processor`() {
-        val (onePayload, oneEvent) = Pair("""{"data":"{"foo":"any-value"}"}""", FooEvent(data = Foo("any-value")))
-        val (anotherPayload, anotherEvent) = Pair("""{"data":"{"foo":"other-value"}"}""", FooEvent(data = Foo("other-value")))
-        whenever(objectMapper.readValue(onePayload, FooEvent::class.java)).thenReturn(oneEvent)
-        whenever(objectMapper.readValue(anotherPayload, FooEvent::class.java)).thenReturn(anotherEvent)
+    fun `should delegate all kinesis event payloads to event processor`() {
+        val (oneKinesisEvent, oneKinesisEventInstance) = eventPair()
+        val (anotherKinesisEvent, anotherKinesisEventInstance) = Pair("""{"data":"{"name":"other-value"}"}""", FooCreatedKinesisEvent(data = FooCreatedEvent(Foo("other-value")), metadata = mock { }))
+        whenever(objectMapper.readValue(oneKinesisEvent, FooCreatedKinesisEvent::class.java)).thenReturn(oneKinesisEventInstance)
+        whenever(objectMapper.readValue(anotherKinesisEvent, FooCreatedKinesisEvent::class.java)).thenReturn(anotherKinesisEventInstance)
 
-        unit.processRecords(wrap(onePayload, anotherPayload))
+        unit.processRecords(wrap(oneKinesisEvent, anotherKinesisEvent))
 
-        verify(eventProcessor).invoke(oneEvent)
-        verify(eventProcessor).invoke(anotherEvent)
+        verify(eventProcessor).invoke(oneKinesisEventInstance.data)
+        verify(eventProcessor).invoke(anotherKinesisEventInstance.data)
     }
 
     @Test
     fun `should retry processing on exception`() {
-        val (payload, event) = Pair("""{"data":"{"foo":"any-value"}"}""", FooEvent(data = Foo("any-value")))
-        whenever(objectMapper.readValue(payload, FooEvent::class.java)).thenReturn(event)
+        val (kinesisEvent, kinesisEventInstance) = eventPair()
+        whenever(objectMapper.readValue(kinesisEvent, FooCreatedKinesisEvent::class.java)).thenReturn(kinesisEventInstance)
         whenever(configuration.maxRetries).thenReturn(2)
-        whenever(eventProcessor.invoke(event))
+        whenever(eventProcessor.invoke(kinesisEventInstance.data))
                 .doThrow(RuntimeException::class)
                 .thenReturn(Unit) // stop throwing
 
-        unit.processRecords(wrap(payload))
+        unit.processRecords(wrap(kinesisEvent))
 
-        verify(eventProcessor, times(2)).invoke(event)
+        verify(eventProcessor, times(2)).invoke(kinesisEventInstance.data)
     }
 
     @Test
     fun `should checkpoint after processing event batch`() {
-        val (payload, event) = Pair("""{"data":"{"foo":"any-value"}"}""", FooEvent(data = Foo("any-value")))
-        whenever(objectMapper.readValue(payload, FooEvent::class.java)).thenReturn(event)
+        val (kinesisEvent, kinesisEventInstance) = eventPair()
+        whenever(objectMapper.readValue(kinesisEvent, FooCreatedKinesisEvent::class.java)).thenReturn(kinesisEventInstance)
 
-        unit.processRecords(wrap(payload))
+        unit.processRecords(wrap(kinesisEvent))
 
         verify(streamCheckpointer).checkpoint()
     }
 
+    //
     @Test
     fun `should retry checkpointing on dependency exception`() {
-        val (payload, event) = Pair("""{"data":"{"foo":"any-value"}"}""", FooEvent(data = Foo("any-value")))
-        whenever(objectMapper.readValue(payload, FooEvent::class.java)).thenReturn(event)
+        val (kinesisEvent, kinesisEventInstance) = eventPair()
+        whenever(objectMapper.readValue(kinesisEvent, FooCreatedKinesisEvent::class.java)).thenReturn(kinesisEventInstance)
         whenever(configuration.maxRetries).thenReturn(2)
         whenever(streamCheckpointer.checkpoint())
                 .doThrow(KinesisClientLibDependencyException::class).then { } // stop throwing
 
-        unit.processRecords(wrap(payload))
+        unit.processRecords(wrap(kinesisEvent))
 
         verify(streamCheckpointer, times(2)).checkpoint()
     }
 
     @Test
     fun `should retry checkpointing on throttling exception`() {
-        val (payload, event) = Pair("""{"data":"{"foo":"any-value"}"}""", FooEvent(data = Foo("any-value")))
-        whenever(objectMapper.readValue(payload, FooEvent::class.java)).thenReturn(event)
+        val (kinesisEvent, kinesisEventInstance) = eventPair()
+        whenever(objectMapper.readValue(kinesisEvent, FooCreatedKinesisEvent::class.java)).thenReturn(kinesisEventInstance)
         whenever(configuration.maxRetries).thenReturn(2)
         whenever(streamCheckpointer.checkpoint())
                 .doThrow(ThrottlingException::class).then { } // stop throwing
 
-        unit.processRecords(wrap(payload))
+        unit.processRecords(wrap(kinesisEvent))
 
         verify(streamCheckpointer, times(2)).checkpoint()
     }
 
     @Test
     fun `shouldn't retry checkpointing when application is shutting down`() {
-        val (payload, event) = Pair("""{"data":"{"foo":"any-value"}"}""", FooEvent(data = Foo("any-value")))
-        whenever(objectMapper.readValue(payload, FooEvent::class.java)).thenReturn(event)
+        val (kinesisEvent, kinesisEventInstance) = eventPair()
+        whenever(objectMapper.readValue(kinesisEvent, FooCreatedKinesisEvent::class.java)).thenReturn(kinesisEventInstance)
         whenever(configuration.maxRetries).thenReturn(2)
         whenever(streamCheckpointer.checkpoint())
                 .doThrow(ShutdownException::class).then { } // stop throwing
 
-        unit.processRecords(wrap(payload))
+        unit.processRecords(wrap(kinesisEvent))
 
         verify(streamCheckpointer).checkpoint()
     }
 
     @Test
     fun `shouldn't retry checkpointing on invalid state`() {
-        val (payload, event) = Pair("""{"data":"{"foo":"any-value"}"}""", FooEvent(data = Foo("any-value")))
-        whenever(objectMapper.readValue(payload, FooEvent::class.java)).thenReturn(event)
+        val (kinesisEvent, kinesisEventInstance) = eventPair()
+        whenever(objectMapper.readValue(kinesisEvent, FooCreatedKinesisEvent::class.java)).thenReturn(kinesisEventInstance)
         whenever(configuration.maxRetries).thenReturn(2)
         whenever(streamCheckpointer.checkpoint())
                 .doThrow(InvalidStateException::class).then { } // stop throwing
 
-        unit.processRecords(wrap(payload))
+        unit.processRecords(wrap(kinesisEvent))
 
         verify(streamCheckpointer).checkpoint()
     }
@@ -173,9 +183,10 @@ class AwsKinesisRecordProcessorTest {
         verify(streamCheckpointer).checkpoint()
     }
 
-    private fun wrap(vararg eventPayload: String): ProcessRecordsInput {
+    private fun eventPair() = Pair("""{"data":"{"name":"any-value"}"}""", FooCreatedKinesisEvent(data = FooCreatedEvent(Foo("any-value")), metadata = mock { }))
+    private fun wrap(vararg kinesisEvents: String): ProcessRecordsInput {
         return mock {
-            val eventRecords = eventPayload.toList().map { payload -> mock<Record> { on { data } doReturn ByteBuffer.wrap(payload.toByteArray()) } }
+            val eventRecords = kinesisEvents.toList().map { event -> mock<Record> { on { data } doReturn ByteBuffer.wrap(event.toByteArray()) } }
             on { records }.thenReturn(eventRecords)
             on { checkpointer }.thenReturn(streamCheckpointer)
         }

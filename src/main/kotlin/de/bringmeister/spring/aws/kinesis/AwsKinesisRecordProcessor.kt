@@ -15,10 +15,12 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import java.nio.charset.Charset
 
-class AwsKinesisRecordProcessor<T : Event>(private val objectMapper: ObjectMapper,
-                                           private val configuration: RecordProcessorConfiguration,
-                                           private val eventClass: Class<T>,
-                                           private val process: (T) -> (Unit)) : IRecordProcessor {
+class AwsKinesisRecordProcessor<PayloadType,
+        KinesisEventType : KinesisEvent<PayloadType, *>,
+        KinesisEventClassType : Class<KinesisEventType>>(private val objectMapper: ObjectMapper,
+                                                         private val configuration: RecordProcessorConfiguration,
+                                                         private val eventClass: KinesisEventClassType,
+                                                         private val payloadHandler: (PayloadType) -> (Unit)) : IRecordProcessor {
 
     private val log = LoggerFactory.getLogger(this.javaClass.name)
 
@@ -61,7 +63,7 @@ class AwsKinesisRecordProcessor<T : Event>(private val objectMapper: ObjectMappe
 
         val event = objectMapper.readValue(recordData, eventClass)
 
-        process(event)
+        payloadHandler(event.data())
     }
 
     private fun checkpoint(checkpointer: IRecordProcessorCheckpointer) {

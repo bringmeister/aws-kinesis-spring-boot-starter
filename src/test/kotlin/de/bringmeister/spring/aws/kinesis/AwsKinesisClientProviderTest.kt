@@ -119,12 +119,12 @@ class AwsKinesisClientProviderTest {
 
     @Test
     fun `should compose consumer application name from stream name and consumer group`() {
-        whenever(settings.consumerGroup).thenReturn("foo-consumer-group")
+        whenever(settings.consumerGroup).thenReturn("name-consumer-group")
         consumerSettings("bar-stream-name")
 
         val config = clientProvider.consumerConfig("bar-stream-name")
 
-        assertThat(config.applicationName, equalTo("foo-consumer-group_bar-stream-name"))
+        assertThat(config.applicationName, equalTo("name-consumer-group_bar-stream-name"))
     }
 
     @Test
@@ -139,10 +139,10 @@ class AwsKinesisClientProviderTest {
 
     @Test
     fun `consumer config should use assumeRoleCredentialsProviderFactory to obtain kinesis credentials`() {
-        consumerSettings("any", awsAccountId = "123", iamRole = "foo-iam-role")
+        consumerSettings("any", awsAccountId = "123", iamRole = "name-iam-role")
 
         val kinesisCredentialsProvider = mock<AWSCredentialsProvider> { }
-        whenever(assumeRoleCredentialsProviderFactory.credentials("arn:aws:iam::123:role/foo-iam-role")).thenReturn(kinesisCredentialsProvider)
+        whenever(assumeRoleCredentialsProviderFactory.credentials("arn:aws:iam::123:role/name-iam-role")).thenReturn(kinesisCredentialsProvider)
 
         val config = clientProvider.consumerConfig("any")
 
