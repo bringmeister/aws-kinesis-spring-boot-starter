@@ -12,6 +12,7 @@ buildscript {
     ext["mockito.version"] = "2.13.0"
 
     ext.allRepositories = {
+        mavenLocal()
         jcenter()
         mavenCentral()
     }
@@ -105,4 +106,10 @@ coveralls {
     // does not pick it up automatically.
     // See https://github.com/kt3k/coveralls-gradle-plugin/issues/63
     sourceDirs += ['src/main/kotlin']
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }

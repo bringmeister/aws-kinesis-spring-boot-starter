@@ -83,10 +83,16 @@ The event will be marshalled as json using jackson and send to the kinesis strea
 ````
 
 ### 3. Consume Events
-Inject `AwsKinesisInboundGateway` wherever you like and call `listen()`. You need to provide the name of the stream you defined in the application.yml 
-and a event handler that handles your data and metadata.
+Inject `AwsKinesisInboundGateway` wherever you like and call `listen()`. 
+You need to provide the name of the stream you defined in the application.yml, an event handler that handles your data and metadata and the class references of your data and metadata for deserialization.
+If you do not want to provide the class references, you can create an `EventHandler<DataType, MetadataType>` using the `handler()` method and pass it to `listen()`. The library will find on its own the proper 
+class references based on the provided event handler and store it within the `EventHandler<DataType, MetadataType>` instance.
 ```kotlin
-fun <DataType, MetadataType> listen(streamName: String, handler: (DataType, MetadataType) -> Unit)
+fun <DataType, MetadataType, DClass : Class<DataType>, MClass : Class<MetadataType>> listen(streamName: String, eventHandler: (DataType, MetadataType) -> Unit, dataClass: DClass, metadataClass: MClass)
+
+
+inline fun <reified DataType, reified MetadataType> handler(streamName: String, noinline eventProcessor: (DataType, MetadataType) -> Unit): EventHandler<DataType, MetadataType>
+fun <DataType, MetadataType> listen(handler: EventHandler<DataType, MetadataType>)
 
 ```
 
@@ -97,7 +103,13 @@ class EventConsumer(private val gateway: AwsKinesisInboundGateway) {
     
     @Scheduled(fixedDelay = (60 * 1000))
     fun listenForFooEvents() {
-        gateway.listen(FooEvent.STREAM_NAME, { data:FooCreatedEvent, metadata:EventMetadata -> println("Processing Event $event") })
+        gateway.listen("foo-stream", { data:FooCreatedEvent, metadata:EventMetadata -> println("Processing $event") }, FooCreatedEvent::class.java, EventMetadata::class.java)
+    }
+
+    @Scheduled(fixedDelay = (60 * 1000))
+    fun listenForBarEvents() {
+        val listener = gateway.listener("bar-stream", { data:BarCreatedEvent, metadata:EventMetadata -> println("Processing $event") })
+        gateway.listen(listener)
     }
 }
 ```

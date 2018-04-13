@@ -11,15 +11,13 @@ import com.amazonaws.services.kinesis.clientlibrary.types.InitializationInput
 import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput
 import com.amazonaws.services.kinesis.model.Record
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import java.nio.charset.Charset
 
-class AwsKinesisRecordProcessor<D, M, C : Class<KinesisEvent<D, M>>>(private val objectMapper: ObjectMapper,
-                                                                      private val configuration: RecordProcessorConfiguration,
-                                                                      private val handler: (D, M) -> (Unit),
-                                                                      private val eventClass: C) : IRecordProcessor {
+class AwsKinesisRecordProcessor<D, M>(private val objectMapper: ObjectMapper,
+                                      private val configuration: RecordProcessorConfiguration,
+                                      private val handler: EventHandler<D, M>) : IRecordProcessor {
 
     private val log = LoggerFactory.getLogger(this.javaClass.name)
 
@@ -60,9 +58,9 @@ class AwsKinesisRecordProcessor<D, M, C : Class<KinesisEvent<D, M>>>(private val
     private fun processRecord(recordData: String) {
         log.info("Received Event [{}]", recordData)
 
-        val event = objectMapper.readValue(recordData, eventClass)
+        val event = objectMapper.readValue<KinesisEventWrapper<D, M>>(recordData, handler.eventType)
 
-        handler(event.data(), event.metadata())
+        handler.eventHandler(event.data(), event.metadata())
     }
 
     private fun checkpoint(checkpointer: IRecordProcessorCheckpointer) {

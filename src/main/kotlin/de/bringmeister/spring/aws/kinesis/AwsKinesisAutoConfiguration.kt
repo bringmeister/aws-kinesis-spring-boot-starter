@@ -64,8 +64,9 @@ class AwsKinesisAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    fun kinesisInboundGateway(clientProvider: AwsKinesisClientProvider,
-                              workerFactory: WorkerFactory) = AwsKinesisInboundGateway(clientProvider, workerFactory)
+    fun kinesisInboundGateway(objectMapper: ObjectMapper,
+                              clientProvider: AwsKinesisClientProvider,
+                              workerFactory: WorkerFactory) = AwsKinesisInboundGateway(objectMapper, clientProvider, workerFactory)
 
 
 }

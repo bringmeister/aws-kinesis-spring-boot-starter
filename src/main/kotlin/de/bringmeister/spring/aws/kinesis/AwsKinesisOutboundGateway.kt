@@ -40,7 +40,7 @@ class AwsKinesisOutboundGateway(private val kinesisSettings: AwsKinesisSettings,
     }
 }
 
-internal data class KinesisEventWrapper<out D, out M>(val streamName: String, val data: D, val metadata: M) : KinesisEvent<D, M> {
+data class KinesisEventWrapper<out D, out M>(val streamName: String, val data: D, val metadata: M) : KinesisEvent<D, M> {
     override fun streamName() = streamName
     override fun data() = data
     override fun metadata() = metadata
