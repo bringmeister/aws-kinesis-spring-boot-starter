@@ -10,7 +10,6 @@ import org.springframework.boot.autoconfigure.ImportAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 
 @RunWith(SpringRunner::class)
@@ -18,15 +17,15 @@ import org.springframework.test.context.junit4.SpringRunner
 class AwsKinesisAutoConfigurationTest {
 
     @Autowired
-    lateinit var inbound: AwsKinesisInboundGateway
+    lateinit var awsKinesisOutboundGateway: AwsKinesisOutboundGateway
 
     @Autowired
-    lateinit var outbound: AwsKinesisOutboundGateway
+    lateinit var kinesisListenerPostProcessor: KinesisListenerPostProcessor
 
     @Test
-    fun `should inject gateway beans`() {
-        checkNotNull(inbound)
-        checkNotNull(outbound)
+    fun `should inject main beans`() {
+        checkNotNull(awsKinesisOutboundGateway)
+        checkNotNull(kinesisListenerPostProcessor)
     }
 
     @Configuration
