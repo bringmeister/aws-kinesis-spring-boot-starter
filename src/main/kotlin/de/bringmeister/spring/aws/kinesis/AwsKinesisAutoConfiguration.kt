@@ -17,64 +17,30 @@ class AwsKinesisAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    fun clientConfigFactory(credentialsProvider: AWSCredentialsProvider,
-                            awsCredentialsProviderFactory: AWSCredentialsProviderFactory,
-                            kinesisSettings: AwsKinesisSettings) : ClientConfigFactory {
+    fun awsKinesisOutboundGateway(objectMapper: ObjectMapper, kinesisSettings: AwsKinesisSettings): AwsKinesisOutboundGateway {
 
-        return ClientConfigFactory(credentialsProvider, awsCredentialsProviderFactory, kinesisSettings)
+        val awsCredentialsProviderFactory = credentialsProviderFactory(kinesisSettings)
+        val kinesisClientProvider = KinesisClientProvider(awsCredentialsProviderFactory, kinesisSettings)
+        val requestFactory = RequestFactory(objectMapper)
+        return AwsKinesisOutboundGateway(kinesisClientProvider, requestFactory)
     }
 
     @Bean
     @ConditionalOnMissingBean
-    fun credentialsProvider(settings: AwsKinesisSettings) = DefaultAWSCredentialsProviderChain() as AWSCredentialsProvider
+    fun kinesisListenerPostProcessor(objectMapper: ObjectMapper, kinesisSettings: AwsKinesisSettings): KinesisListenerPostProcessor {
 
-    @Bean
-    @ConditionalOnMissingBean
-    fun credentialsProviderFactory(kinesisSettings: AwsKinesisSettings,
-                                   credentialsProvider: AWSCredentialsProvider): AWSCredentialsProviderFactory {
-
-        return STSAssumeRoleSessionCredentialsProviderFactory(credentialsProvider, kinesisSettings)
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    fun workerStarter() = WorkerStarter()
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnBean(ObjectMapper::class)
-    fun recordMapper(objectMapper: ObjectMapper): RecordMapper {
-        return ReflectionBasedRecordMapper(objectMapper)
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnBean(ObjectMapper::class)
-    fun workerFactory(clientConfigFactory: ClientConfigFactory, recordMapper: RecordMapper) = WorkerFactory(clientConfigFactory, recordMapper)
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnBean(ObjectMapper::class)
-    fun requestFactory(objectMapper: ObjectMapper) = RequestFactory(objectMapper)
-
-    @Bean
-    @ConditionalOnMissingBean
-    fun kinesisClientProvider(awsKinesisSettings: AwsKinesisSettings,
-                              awsCredentialsProviderFactory: AWSCredentialsProviderFactory) = KinesisClientProvider(awsCredentialsProviderFactory, awsKinesisSettings)
-
-    @Bean
-    @ConditionalOnMissingBean
-    fun kinesisOutboundGateway(kinesisClientProvider: KinesisClientProvider,
-                               requestFactory: RequestFactory) = AwsKinesisOutboundGateway(kinesisClientProvider, requestFactory)
-
-    @Bean
-    @ConditionalOnMissingBean
-    fun kinesisInboundGateway(workerFactory: WorkerFactory,
-                              workerStarter: WorkerStarter) = AwsKinesisInboundGateway(workerFactory, workerStarter)
-
-    @Bean
-    @ConditionalOnMissingBean
-    fun kinesisListenerPostProcessor(inboundGateway: AwsKinesisInboundGateway): KinesisListenerPostProcessor {
+        val awsCredentialsProviderFactory = credentialsProviderFactory(kinesisSettings)
+        val credentialsProvider = DefaultAWSCredentialsProviderChain() as AWSCredentialsProvider
+        val clientConfigFactory = ClientConfigFactory(credentialsProvider, awsCredentialsProviderFactory, kinesisSettings)
+        val recordMapper = ReflectionBasedRecordMapper(objectMapper)
+        val workerFactory = WorkerFactory(clientConfigFactory, recordMapper)
+        val workerStarter = WorkerStarter()
+        val inboundGateway = AwsKinesisInboundGateway(workerFactory, workerStarter)
         return KinesisListenerPostProcessor(inboundGateway)
+    }
+
+    private fun credentialsProviderFactory(kinesisSettings: AwsKinesisSettings): AWSCredentialsProviderFactory {
+        val credentialsProvider = DefaultAWSCredentialsProviderChain()
+        return STSAssumeRoleSessionCredentialsProviderFactory(credentialsProvider, kinesisSettings)
     }
 }
