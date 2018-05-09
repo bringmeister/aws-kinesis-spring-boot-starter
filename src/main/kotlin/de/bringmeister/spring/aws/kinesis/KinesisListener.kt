@@ -9,10 +9,11 @@ package de.bringmeister.spring.aws.kinesis
  *          @Service
  *          class MyKinesisListener {
  *
- *              @KinesisListener(stream = "my-kinesis-stream")
+ *              @KinesisListener(stream = "my-kinesis-stream", threadPoolSize = 10)
  *              fun handle(data: MyData, metadata: MyMetadata) = println("$data, $metadata")
  *          }
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class KinesisListener(val stream: String)
+annotation class KinesisListener(val stream: String,
+                                 val threadPoolSize: Int = 10)
