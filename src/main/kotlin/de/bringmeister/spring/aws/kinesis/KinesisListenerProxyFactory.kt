@@ -13,6 +13,11 @@ class KinesisListenerProxyFactory {
                 .javaClass
                 .methods
                 .filter({ method -> method.isAnnotationPresent(KinesisListener::class.java) })
-                .map({ method -> KinesisListenerProxy(method, bean, method.getAnnotation(KinesisListener::class.java).stream) })
+                .map({
+                    method -> KinesisListenerProxy(method,
+                                                   bean,
+                                                   method.getAnnotation(KinesisListener::class.java).stream,
+                                                   method.getAnnotation(KinesisListener::class.java).threadPoolSize)
+                })
     }
 }

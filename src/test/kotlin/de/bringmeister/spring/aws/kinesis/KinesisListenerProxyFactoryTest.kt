@@ -17,7 +17,9 @@ class KinesisListenerProxyFactoryTest {
     @Test
     fun `should return list no Kinesis listeners`() {
         val dummyListener = DummyListener()
-        val kinesisListenerProxies = kinesisListenerProxyFactory.proxiesFor(dummyListener)
+        val kinesisListenerProxies = kinesisListenerProxyFactory
+                                                .proxiesFor(dummyListener)
+                                                .sortedWith(compareBy({ it.stream })) // sort it for constant order!
 
         assertThat(kinesisListenerProxies).hasSize(2)
 

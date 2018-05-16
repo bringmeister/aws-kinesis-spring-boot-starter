@@ -10,8 +10,6 @@ import com.amazonaws.services.kinesis.clientlibrary.types.InitializationInput
 import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput
 import com.amazonaws.services.kinesis.model.Record
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.doThrow
@@ -25,24 +23,15 @@ import java.nio.ByteBuffer
 
 class AwsKinesisRecordProcessorTest {
 
+    val expectedKinesisEvent = KinesisEventWrapper("foo-event-stream", FooCreatedEvent("any-field"), EventMetadata("test"));
     val messageJson = """{"streamName":"foo-event-stream","data":{"foo":"any-field"},"metadata":{"sender":"test"}}"""
-    val mapper = ObjectMapper().registerModule(KotlinModule())
-    val recordMapper = ReflectionBasedRecordMapper(mapper)
+    val recordMapper = mock<ReflectionBasedRecordMapper> { on { deserializeFor(any(), any()) } doReturn expectedKinesisEvent }
+
     val streamCheckpointer = mock<IRecordProcessorCheckpointer> {}
     val configuration = RecordProcessorConfiguration(2, 1)
-    var handlerMock = mock<(FooCreatedEvent, EventMetadata) -> Unit> {  }
+    val kinesisListenerProxy = mock<KinesisListenerProxy> { }
 
-    var handler = object {
-
-        @KinesisListener(stream = "foo-event-stream")
-        fun handle(data: FooCreatedEvent, metadata: EventMetadata) {
-            handlerMock.invoke(data, metadata)
-        }
-    }
-
-    val kinesisListener = KinesisListenerProxyFactory().proxiesFor(handler)[0]
-
-    val recordProcessor = AwsKinesisRecordProcessor(recordMapper, configuration, kinesisListener)
+    val recordProcessor = AwsKinesisRecordProcessor(recordMapper, configuration, kinesisListenerProxy)
 
     @Before
     fun setUp() {
@@ -63,21 +52,21 @@ class AwsKinesisRecordProcessorTest {
         recordProcessor.processRecords(record1)
         recordProcessor.processRecords(record2)
 
-        verify(handlerMock, times(2)).invoke(FooCreatedEvent("any-field"), EventMetadata("test"))
+        verify(kinesisListenerProxy, times(2)).invoke(FooCreatedEvent("any-field"), EventMetadata("test"))
         verify(streamCheckpointer, times(2)).checkpoint()
     }
 
     @Test
     fun `should retry processing on exception`() {
 
-        whenever(handlerMock.invoke(any(), any()))
+        whenever(kinesisListenerProxy.invoke(any(), any()))
             .doThrow(RuntimeException::class)
             .then {  } // stop throwing
 
         val record = wrap(messageJson)
         recordProcessor.processRecords(record)
 
-        verify(handlerMock, times(2)).invoke(any(), any()) // handler fails, so it's retried 2 times
+        verify(kinesisListenerProxy, times(2)).invoke(any(), any()) // handler fails, so it's retried 2 times
         verify(streamCheckpointer).checkpoint() // however, we checkpoint only once after success
     }
 
@@ -91,7 +80,7 @@ class AwsKinesisRecordProcessorTest {
         val record = wrap(messageJson)
         recordProcessor.processRecords(record)
 
-        verify(handlerMock).invoke(FooCreatedEvent("any-field"), EventMetadata("test")) // handler is successful
+        verify(kinesisListenerProxy).invoke(FooCreatedEvent("any-field"), EventMetadata("test")) // handler is successful
         verify(streamCheckpointer, times(2)).checkpoint() // but checkpointing fails once and is tried 2 times
     }
 
@@ -105,7 +94,7 @@ class AwsKinesisRecordProcessorTest {
         val record = wrap(messageJson)
         recordProcessor.processRecords(record)
 
-        verify(handlerMock).invoke(FooCreatedEvent("any-field"), EventMetadata("test")) // handler is successful
+        verify(kinesisListenerProxy).invoke(FooCreatedEvent("any-field"), EventMetadata("test")) // handler is successful
         verify(streamCheckpointer, times(2)).checkpoint() // but checkpointing fails once and is tried 2 times
     }
 
