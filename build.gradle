@@ -1,7 +1,7 @@
 buildscript {
     ext {
         versions = [
-                kotlin    : '1.2.30',
+                kotlin    : '1.2.51',
                 springBoot: '1.5.8.RELEASE',
                 kinesis   : '1.8.10',
                 awsSdk    : '1.11.280',

@@ -7,7 +7,6 @@ import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
-import de.bringmeister.connect.erpproductfacade.ports.event.KotlinListenerTest;
 import de.bringmeister.spring.aws.kinesis.local.KinesisLocalConfiguration;
 import org.junit.ClassRule;
 import org.junit.Test;

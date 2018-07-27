@@ -1,6 +1,5 @@
 package de.bringmeister.spring.aws.kinesis
 
-import de.bringmeister.connect.erpproductfacade.ports.event.KotlinListenerTest
 import org.slf4j.LoggerFactory
 
 class KotlinTestListener {

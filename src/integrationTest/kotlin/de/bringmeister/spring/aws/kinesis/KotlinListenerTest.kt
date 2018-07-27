@@ -1,4 +1,4 @@
-package de.bringmeister.connect.erpproductfacade.ports.event
+package de.bringmeister.spring.aws.kinesis
 
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.auth.AWSStaticCredentialsProvider
@@ -6,13 +6,6 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.github.dockerjava.api.model.ExposedPort
 import com.github.dockerjava.api.model.PortBinding
 import com.github.dockerjava.api.model.Ports
-import de.bringmeister.spring.aws.kinesis.AwsKinesisAutoConfiguration
-import de.bringmeister.spring.aws.kinesis.AwsKinesisOutboundGateway
-import de.bringmeister.spring.aws.kinesis.EventMetadata
-import de.bringmeister.spring.aws.kinesis.FooCreatedEvent
-import de.bringmeister.spring.aws.kinesis.JacksonConfiguration
-import de.bringmeister.spring.aws.kinesis.KotlinTestListener
-import de.bringmeister.spring.aws.kinesis.Record
 import de.bringmeister.spring.aws.kinesis.local.KinesisLocalConfiguration
 import org.junit.ClassRule
 import org.junit.Test
