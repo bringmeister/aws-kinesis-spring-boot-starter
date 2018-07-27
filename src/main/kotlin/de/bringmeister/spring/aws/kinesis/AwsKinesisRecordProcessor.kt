@@ -13,11 +13,13 @@ import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput
 import com.amazonaws.services.kinesis.model.Record
 import org.slf4j.LoggerFactory
 import java.nio.charset.Charset
+import javax.validation.Validator
 
 class AwsKinesisRecordProcessor(
     private val recordMapper: RecordMapper,
     private val configuration: RecordProcessorConfiguration,
-    private val handler: KinesisListenerProxy
+    private val handler: KinesisListenerProxy,
+    private val validator: Validator? = null
 ) : IRecordProcessor {
 
     private val log = LoggerFactory.getLogger(javaClass.name)
@@ -66,6 +68,12 @@ class AwsKinesisRecordProcessor(
     private fun processRecord(recordData: String) {
         log.debug("Processing record.")
         val message = recordMapper.deserializeFor(recordData, handler)
+        val violations = validator?.validate(message) ?: setOf()
+        if (violations.isNotEmpty()) {
+            log.warn("skip invalid record with violations: $violations message: $message")
+            return
+        }
+        
         handler.invoke(message.data, message.metadata)
     }
 

@@ -57,8 +57,12 @@ class AwsKinesisAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(ObjectMapper::class)
-    fun workerFactory(clientConfigFactory: ClientConfigFactory, recordMapper: RecordMapper, settings: AwsKinesisSettings) =
-        WorkerFactory(clientConfigFactory, recordMapper, settings)
+    fun workerFactory(
+        clientConfigFactory: ClientConfigFactory,
+        recordMapper: RecordMapper,
+        settings: AwsKinesisSettings,
+        validator: Optional<Validator> = Optional.empty()
+    ) = WorkerFactory(clientConfigFactory, recordMapper, settings, validator.orElse(null))
 
     @Bean
     @ConditionalOnMissingBean

@@ -13,15 +13,18 @@ import com.amazonaws.services.kinesis.model.Record
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.nhaarman.mockito_kotlin.any
+import com.nhaarman.mockito_kotlin.anyVararg
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.doThrow
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.verifyZeroInteractions
 import com.nhaarman.mockito_kotlin.whenever
 import org.junit.Before
 import org.junit.Test
 import java.nio.ByteBuffer
+import javax.validation.Validator
 
 class AwsKinesisRecordProcessorTest {
 
@@ -30,6 +33,7 @@ class AwsKinesisRecordProcessorTest {
     val recordMapper = ReflectionBasedRecordMapper(mapper)
     val streamCheckpointer = mock<IRecordProcessorCheckpointer> {}
     val configuration = RecordProcessorConfiguration(2, 1)
+    val validator = mock<Validator>()
     var handlerMock = mock<(FooCreatedEvent, EventMetadata) -> Unit> { }
 
     var handler = object {
@@ -42,7 +46,7 @@ class AwsKinesisRecordProcessorTest {
 
     val kinesisListener = KinesisListenerProxyFactory(AopProxyUtils()).proxiesFor(handler)[0]
 
-    val recordProcessor = AwsKinesisRecordProcessor(recordMapper, configuration, kinesisListener)
+    val recordProcessor = AwsKinesisRecordProcessor(recordMapper, configuration, kinesisListener, validator)
 
     @Before
     fun setUp() {
@@ -65,6 +69,16 @@ class AwsKinesisRecordProcessorTest {
 
         verify(handlerMock, times(2)).invoke(FooCreatedEvent("any-field"), EventMetadata("test"))
         verify(streamCheckpointer, times(2)).checkpoint()
+    }
+
+    @Test
+    fun `should not invoke Kinesis listener on invalid record`() {
+
+        val record1 = wrap(messageJson)
+        whenever(validator.validate(anyVararg<FooCreatedEvent>())).thenReturn(setOf(mock()))
+        recordProcessor.processRecords(record1)
+        verifyZeroInteractions(handlerMock)
+        verify(streamCheckpointer, times(1)).checkpoint()
     }
 
     @Test
