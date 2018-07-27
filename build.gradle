@@ -31,9 +31,9 @@ configurations.all {
 
         failOnVersionConflict()
 
-        force 'org.jetbrains.kotlin:kotlin-reflect:1.2.30'
+        force "org.jetbrains.kotlin:kotlin-reflect:${versions.kotlin}"
         force 'commons-logging:commons-logging:1.2'
-        force 'org.jetbrains.kotlin:kotlin-stdlib:1.2.30'
+        force "org.jetbrains.kotlin:kotlin-stdlib:${versions.kotlin}"
         force 'org.mockito:mockito-core:2.8.9'
         force 'org.slf4j:jcl-over-slf4j:1.7.25'
         force 'org.slf4j:slf4j-api:1.7.25'

@@ -5,14 +5,16 @@ import com.amazonaws.services.kinesis.model.DescribeStreamResult
 import com.amazonaws.services.kinesis.model.LimitExceededException
 import com.amazonaws.services.kinesis.model.ResourceNotFoundException
 import com.amazonaws.services.kinesis.model.StreamDescription
-import com.nhaarman.mockito_kotlin.*
+import com.nhaarman.mockito_kotlin.doThrow
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.times
+import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.whenever
 import org.junit.Test
 import org.mockito.Mockito.doReturn
 import java.lang.IllegalStateException
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.CyclicBarrier
-
-
+import java.util.concurrent.TimeUnit
 
 class StreamInitializerTest {
 
