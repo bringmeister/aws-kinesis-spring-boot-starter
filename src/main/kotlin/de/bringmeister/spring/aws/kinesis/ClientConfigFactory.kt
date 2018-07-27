@@ -1,7 +1,6 @@
 package de.bringmeister.spring.aws.kinesis
 
 import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream.TRIM_HORIZON
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration
 import java.net.InetAddress
 import java.util.UUID
@@ -28,7 +27,7 @@ class ClientConfigFactory(
             credentialsProvider,
             workerId
         )
-            .withInitialPositionInStream(TRIM_HORIZON)
+            .withInitialPositionInStream(kinesisSettings.initialPositionInStream)
             .withKinesisEndpoint(kinesisSettings.kinesisUrl)
             .withMetricsLevel(kinesisSettings.metricsLevel)
             .withDynamoDBEndpoint(kinesisSettings.dynamoDbSettings!!.url)

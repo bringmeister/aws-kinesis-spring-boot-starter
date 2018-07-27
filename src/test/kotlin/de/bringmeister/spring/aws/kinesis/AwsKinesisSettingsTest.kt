@@ -1,5 +1,6 @@
 package de.bringmeister.spring.aws.kinesis
 
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import de.bringmeister.spring.aws.kinesis.ConfigurationPropertiesBuilder.Companion.builder
@@ -70,6 +71,7 @@ class AwsKinesisProducerSettingsTest {
         assertThat(settings.region, equalTo("eu-central-1"))
         assertThat(settings.kinesisUrl, equalTo("https://kinesis.eu-central-1.amazonaws.com"))
         assertThat(settings.dynamoDbSettings!!.url, equalTo("https://dynamodb.eu-central-1.amazonaws.com"))
+        assertThat(settings.initialPositionInStream, equalTo(InitialPositionInStream.LATEST))
     }
 
     @Test
@@ -83,12 +85,14 @@ class AwsKinesisProducerSettingsTest {
             .withProperty("region", "local")
             .withProperty("kinesisUrl", kinesisUrl)
             .withProperty("dynamoDbSettings.url", dynamoDbUrl)
+            .withProperty("initialPositionInStream", "TRIM_HORIZON")
             .validateUsing(localValidatorFactoryBean)
             .build()
 
         assertThat(settings.region, equalTo("local"))
         assertThat(settings.kinesisUrl, equalTo(kinesisUrl))
         assertThat(settings.dynamoDbSettings!!.url, equalTo(dynamoDbUrl))
+        assertThat(settings.initialPositionInStream, equalTo(InitialPositionInStream.TRIM_HORIZON))
     }
 
     @Test(expected = BindException::class)
@@ -116,5 +120,20 @@ class AwsKinesisProducerSettingsTest {
 
         assertThat(settings.retry.maxRetries, equalTo(3))
         assertThat(settings.retry.backoffTimeInMilliSeconds, equalTo(23L))
+    }
+
+    @Test(expected = BindException::class)
+    fun `should fail if setting initialPositionInStream is not an enum value`() {
+        val kinesisUrl = "http://localhost:1234/kinesis"
+        val dynamoDbUrl = "http://localhost:1234/dynamodb"
+        builder<AwsKinesisSettings>()
+            .populate(AwsKinesisSettings())
+            .withPrefix("aws.kinesis")
+            .withProperty("region", "local")
+            .withProperty("kinesisUrl", kinesisUrl)
+            .withProperty("dynamoDbSettings.url", dynamoDbUrl)
+            .withProperty("initialPositionInStream", "WRONG_VALUE")
+            .validateUsing(localValidatorFactoryBean)
+            .build()
     }
 }

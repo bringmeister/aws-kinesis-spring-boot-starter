@@ -95,6 +95,21 @@ aws:
 By default, `create-streams` will be turned-off. 
 So if you don't specify anything, no streams will be created.
 
+#### Configuring initial position in stream
+
+You can use one of following values:
+* `LATEST`: Start after the most recent data record (fetch new data).
+* `TRIM_HORIZON`: Start from the oldest available data record.
+
+```
+aws:
+  kinesis:
+    ...
+    initial-position-in-stream: TRIM_HORIZON
+```
+
+If you don't specify anything, by default, `LATEST` value will be used.
+
 #### Configuring listeners
 
 You can configure listeners in order to use a dedicated role and account for a stream.

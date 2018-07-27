@@ -1,5 +1,6 @@
 package de.bringmeister.spring.aws.kinesis
 
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream
 import com.amazonaws.services.kinesis.metrics.interfaces.MetricsLevel
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.validation.annotation.Validated
@@ -38,6 +39,7 @@ class AwsKinesisSettings {
             }
         }
 
+    var initialPositionInStream = InitialPositionInStream.LATEST
     var metricsLevel = MetricsLevel.NONE.name
     var createStreams: Boolean = false
     var creationTimeoutInMilliSeconds = TimeUnit.SECONDS.toMillis(30)

@@ -1,7 +1,7 @@
 package de.bringmeister.spring.aws.kinesis
 
 import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream.TRIM_HORIZON
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream.LATEST
 import com.amazonaws.services.kinesis.metrics.interfaces.MetricsLevel.NONE
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
@@ -30,7 +30,7 @@ class ClientConfigFactoryTest {
         val config = clientConfigFactory.consumerConfig("my-kinesis-stream")
 
         assertThat(config.streamName).isEqualTo("my-kinesis-stream")
-        assertThat(config.initialPositionInStream).isEqualTo(TRIM_HORIZON)
+        assertThat(config.initialPositionInStream).isEqualTo(LATEST)
         assertThat(config.kinesisEndpoint).isEqualTo("https://kinesis.eu-central-1.amazonaws.com")
         assertThat(config.metricsLevel).isEqualTo(NONE)
         assertThat(config.dynamoDBEndpoint).isEqualTo("https://dynamo-endpoint-url.com")
