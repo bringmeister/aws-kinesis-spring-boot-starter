@@ -1,0 +1,121 @@
+{
+  "groups": [
+    {
+      "name": "aws.kinesis",
+      "type": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings"
+    },
+    {
+      "name": "aws.kinesis.retry",
+      "type": "de.bringmeister.spring.aws.kinesis.RetrySettings",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.RetrySettings"
+    },
+    {
+      "name": "aws.kinesis.dynamo-db-settings",
+      "type": "de.bringmeister.spring.aws.kinesis.DynamoDbSettings",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.DynamoDbSettings"
+    }
+  ],
+  "properties": [
+    {
+      "name": "aws.kinesis.region",
+      "type": "java.lang.String",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings",
+      "defaultValue": "eu-central-1"
+    },
+    {
+      "name": "aws.kinesis.aws-account-id",
+      "type": "java.lang.String",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings"
+    },
+    {
+      "name": "aws.kinesis.iam-role-to-assume",
+      "type": "java.lang.String",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings"
+    },
+    {
+      "name": "aws.kinesis.consumer-group",
+      "type": "java.lang.String",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings"
+    },
+    {
+      "name": "aws.kinesis.initial-position-in-stream",
+      "type": "java.lang.String",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings",
+      "defaultValue": "LATEST"
+    },
+    {
+      "name": "aws.kinesis.create-streams",
+      "type": "java.lang.Boolean",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings",
+      "defaultValue": false
+    },
+    {
+      "name": "aws.kinesis.creation-timeout-in-milli-seconds",
+      "type": "java.lang.Integer",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings",
+      "defaultValue": 30
+    },
+    {
+      "name": "aws.kinesis.kinesis-url",
+      "type": "java.lang.String",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings",
+      "defaultValue": "http://localhost:14567"
+    },
+    {
+      "name": "aws.kinesis.retry.max-retries",
+      "type": "java.lang.Integer",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.RetrySettings",
+      "defaultValue": 0
+    },
+    {
+      "name": "aws.kinesis.retry.backoff-time-in-milli-seconds",
+      "type": "java.lang.Integer",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.RetrySettings",
+      "defaultValue": 1000
+    },
+    {
+      "name": "aws.kinesis.dynamo-db-settings.url",
+      "type": "java.lang.String",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.DynamoDbSettings",
+      "defaultValue": "http://localhost:14568"
+    },
+    {
+      "name": "aws.kinesis.dynamo-db-settings.lease-table-read-capacity",
+      "type": "java.lang.Integer",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.DynamoDbSettings",
+      "defaultValue": 1
+    },
+    {
+      "name": "aws.kinesis.dynamo-db-settings.lease-table-write-capacity",
+      "type": "java.lang.Integer",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.DynamoDbSettings",
+      "defaultValue": 1
+    },
+    {
+      "name": "aws.kinesis.consumer",
+      "type": "java.util.List<de.bringmeister.spring.aws.kinesis.StreamSettings>",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings"
+    },
+    {
+      "name": "aws.kinesis.producer",
+      "type": "java.util.List<de.bringmeister.spring.aws.kinesis.StreamSettings>",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings"
+    }
+  ],
+  "hints": [
+    {
+      "name": "aws.kinesis.initial-position-in-stream",
+      "values": [
+        {
+          "value": "LATEST",
+          "description": "Start after the most recent data record (fetch new data)."
+        },
+        {
+          "value": "TRIM_HORIZON",
+          "description": "Start from the oldest available data record."
+        }
+      ]
+    }
+  ]
+}
