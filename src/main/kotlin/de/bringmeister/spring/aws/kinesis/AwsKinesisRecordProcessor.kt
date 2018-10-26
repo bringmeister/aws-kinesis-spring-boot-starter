@@ -12,6 +12,7 @@ import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput
 import com.amazonaws.services.kinesis.model.Record
 import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationEventPublisher
 import java.nio.charset.Charset
 import javax.validation.ValidationException
 import javax.validation.Validator
@@ -20,13 +21,16 @@ class AwsKinesisRecordProcessor(
     private val recordMapper: RecordMapper,
     private val configuration: RecordProcessorConfiguration,
     private val handler: KinesisListenerProxy,
+    private val publisher: ApplicationEventPublisher,
     private val validator: Validator? = null
 ) : IRecordProcessor {
 
     private val log = LoggerFactory.getLogger(javaClass.name)
 
     override fun initialize(initializationInput: InitializationInput?) {
-        log.info("Initializing worker for stream [{}] and shard [{}]", handler.stream, initializationInput!!.shardId)
+        val workerInitializedEvent = WorkerInitializedEvent(handler.stream, initializationInput!!.shardId)
+        publisher.publishEvent(workerInitializedEvent)
+        log.info("Kinesis listener initialized: [stream={}, shardId={}]", handler.stream, initializationInput.shardId)
     }
 
     override fun processRecords(processRecordsInput: ProcessRecordsInput?) {
@@ -52,7 +56,6 @@ class AwsKinesisRecordProcessor(
 
             for (attempt in 1..maxAttempts) {
                 try {
-
                     handler.invoke(record.data, record.metadata)
                     return
                 } catch (e: Exception) {

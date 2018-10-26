@@ -23,6 +23,7 @@ import com.nhaarman.mockito_kotlin.verifyZeroInteractions
 import com.nhaarman.mockito_kotlin.whenever
 import org.junit.Before
 import org.junit.Test
+import org.springframework.context.ApplicationEventPublisher
 import java.nio.ByteBuffer
 import javax.validation.Validator
 
@@ -35,6 +36,9 @@ class AwsKinesisRecordProcessorTest {
     val configuration = RecordProcessorConfiguration(2, 1)
     val validator = mock<Validator>()
     var handlerMock = mock<(FooCreatedEvent, EventMetadata) -> Unit> { }
+    var applicationEventPublisher = mock<ApplicationEventPublisher> {
+        on { publishEvent(any()) }.then {  }
+    }
 
     var handler = object {
 
@@ -46,7 +50,8 @@ class AwsKinesisRecordProcessorTest {
 
     val kinesisListener = KinesisListenerProxyFactory(AopProxyUtils()).proxiesFor(handler)[0]
 
-    val recordProcessor = AwsKinesisRecordProcessor(recordMapper, configuration, kinesisListener, validator)
+    val recordProcessor =
+        AwsKinesisRecordProcessor(recordMapper, configuration, kinesisListener, applicationEventPublisher, validator)
 
     @Before
     fun setUp() {

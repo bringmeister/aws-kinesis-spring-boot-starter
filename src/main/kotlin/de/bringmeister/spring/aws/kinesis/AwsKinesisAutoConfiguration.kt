@@ -8,9 +8,9 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import java.util.Optional
 import javax.validation.Validator
 
 @Configuration
@@ -62,8 +62,9 @@ class AwsKinesisAutoConfiguration {
         clientConfigFactory: ClientConfigFactory,
         recordMapper: RecordMapper,
         settings: AwsKinesisSettings,
+        applicationEventPublisher: ApplicationEventPublisher,
         @Autowired(required = false) validator: Validator?
-    ) = WorkerFactory(clientConfigFactory, recordMapper, settings, validator)
+    ) = WorkerFactory(clientConfigFactory, recordMapper, settings, applicationEventPublisher, validator)
 
     @Bean
     @ConditionalOnMissingBean
