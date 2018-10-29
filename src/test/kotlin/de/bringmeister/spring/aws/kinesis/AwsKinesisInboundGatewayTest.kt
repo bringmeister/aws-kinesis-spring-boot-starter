@@ -11,7 +11,7 @@ class AwsKinesisInboundGatewayTest {
     val workerStarter: WorkerStarter = mock { }
     val worker = mock<Worker> { }
     val streamInitializer = mock<StreamInitializer>()
-    val kinesisListenerProxy = KinesisListenerProxy(mock { }, mock { }, "my-stream")
+    val kinesisListenerProxy = KinesisListenerProxy(mock { }, mock { }, "my-stream", mock { })
     val workerFactory: WorkerFactory = mock {
         on {
             worker(kinesisListenerProxy)

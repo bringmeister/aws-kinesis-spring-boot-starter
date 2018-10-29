@@ -10,12 +10,12 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.ShutdownReason
 import com.amazonaws.services.kinesis.clientlibrary.types.InitializationInput
 import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput
-import com.amazonaws.services.kinesis.model.Record
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import java.nio.charset.Charset
 import javax.validation.ValidationException
 import javax.validation.Validator
+import com.amazonaws.services.kinesis.model.Record as AWSRecord
 
 class AwsKinesisRecordProcessor(
     private val recordMapper: RecordMapper,
@@ -38,12 +38,64 @@ class AwsKinesisRecordProcessor(
         checkpoint(processRecordsInput.checkpointer)
     }
 
-    private fun processRecordsWithRetries(awsRecords: List<Record>) {
+    private fun processRecordsWithRetries(awsRecords: List<com.amazonaws.services.kinesis.model.Record>) {
         log.trace("Received [{}] records on stream [{}]", awsRecords.size, handler.stream)
-        awsRecords.forEach(this::processRecordWithRetries)
+
+        if (handler.mode == ListenerMode.BATCH) {
+            handleBatch(awsRecords)
+        } else {
+            awsRecords.forEach(this::processRecordWithRetries)
+        }
     }
 
-    private fun processRecordWithRetries(awsRecord: Record) {
+    private fun handleBatch(awsRecords: List<AWSRecord>) {
+        val records = toRecords(awsRecords)
+
+        val maxAttempts = 1 + configuration.maxRetries
+        for (attempt in 1..maxAttempts) {
+            try {
+                handler.invoke(records)
+                return
+            } catch (e: Exception) {
+                log.error("Exception while processing records.", e)
+            }
+
+            backoff()
+        }
+    }
+
+    private fun toRecords(awsRecords: List<AWSRecord>): List<Record<*, *>> {
+        return awsRecords.asSequence()
+            .mapNotNull { awsRecord ->
+                val record = toRecord(awsRecord)
+                val violations = validator?.validate(record) ?: setOf()
+                if (violations.isNotEmpty()) {
+                    log.warn("filtered {} with id {} with violations: {}",
+                        record!!::class.java.simpleName, awsRecord.sequenceNumber,
+                        violations.map { "${it.propertyPath}: ${it.invalidValue} ${it.message}" })
+                    return@mapNotNull null
+                }
+                return@mapNotNull record
+            }
+            .toList()
+    }
+
+    private fun toRecord(awsRecord: AWSRecord): Record<*, *>? {
+        try {
+            val recordData = Charset.forName("UTF-8")
+                .decode(awsRecord.data)
+                .toString()
+            return recordMapper.deserializeFor(recordData, handler)
+        } catch (transformationException: Exception) {
+            log.error(
+                "Exception while transforming record. [sequenceNumber={}, partitionKey={}]",
+                awsRecord.sequenceNumber, awsRecord.partitionKey, transformationException
+            )
+        }
+        return null
+    }
+
+    private fun processRecordWithRetries(awsRecord: AWSRecord) {
         val recordJson = Charset.forName("UTF-8")
             .decode(awsRecord.data)
             .toString()
@@ -56,12 +108,16 @@ class AwsKinesisRecordProcessor(
 
             for (attempt in 1..maxAttempts) {
                 try {
-                    handler.invoke(record.data, record.metadata)
+                    when (handler.mode) {
+                        ListenerMode.RECORD -> handler.invoke(record)
+                        ListenerMode.DATA_METADATA -> handler.invoke(record.data, record.metadata)
+                        else -> throw IllegalStateException("unexpected listener configuration")
+                    }
                     return
                 } catch (e: Exception) {
                     log.error(
-                        "Exception while processing record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
-                        e
+                        "Exception while processing record. [sequenceNumber={}, partitionKey={}]",
+                        awsRecord.sequenceNumber, awsRecord.partitionKey, e
                     )
                 }
 
@@ -69,12 +125,13 @@ class AwsKinesisRecordProcessor(
             }
         } catch (transformationException: Exception) {
             log.error(
-                "Exception while transforming record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
-                transformationException
+                "Exception while transforming record. [sequenceNumber={}, partitionKey={}]",
+                awsRecord.sequenceNumber, awsRecord.partitionKey, transformationException
             )
         }
 
-        log.warn("Processing of record failed. Skipping it. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}, attempts=$maxAttempts")
+        log.warn("Processing of record failed. Skipping it. [sequenceNumber={}, partitionKey={}], attempts={}]",
+            awsRecord.sequenceNumber, awsRecord.partitionKey, maxAttempts)
     }
 
     private fun getRecordFromJson(recordData: String): de.bringmeister.spring.aws.kinesis.Record<*, *> {

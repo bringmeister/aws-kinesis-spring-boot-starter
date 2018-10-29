@@ -1,5 +1,7 @@
 package de.bringmeister.spring.aws.kinesis
 
+import java.lang.reflect.Method
+
 /**
  * This class is a factory for [KinesisListenerProxy]. It takes any object and
  * looks for methods annotated with [KinesisListener]. For any of these methods
@@ -17,13 +19,24 @@ class KinesisListenerProxyFactory(private val aopProxyUtils: AopProxyUtils) {
         return objectToProcess
             .javaClass
             .methods
-            .filter({ method -> method.isAnnotationPresent(KinesisListener::class.java) })
-            .map({ method ->
+            .filter { method -> method.isAnnotationPresent(KinesisListener::class.java) }
+            .map { method ->
+                val annotation = method.getAnnotation(KinesisListener::class.java)
                 KinesisListenerProxy(
                     method,
                     bean, // the original bean! not the objectToProcess!
-                    method.getAnnotation(KinesisListener::class.java).stream
+                    annotation.stream,
+                    resolveListenerMode(method)
                 )
-            })
+            }
+    }
+
+    private fun resolveListenerMode(method: Method?): ListenerMode {
+        val type = method?.parameters?.firstOrNull()?.type
+        return when {
+            type == Record::class.java -> ListenerMode.RECORD
+            Collection::class.java.isAssignableFrom(type) -> ListenerMode.BATCH
+            else -> ListenerMode.DATA_METADATA
+        }
     }
 }
