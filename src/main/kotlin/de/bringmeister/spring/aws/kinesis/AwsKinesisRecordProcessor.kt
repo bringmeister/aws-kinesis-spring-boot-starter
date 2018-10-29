@@ -55,12 +55,10 @@ class AwsKinesisRecordProcessor(
         for (attempt in 1..maxAttempts) {
             try {
                 handler.invoke(records)
-                return
             } catch (e: Exception) {
                 log.error("Exception while processing records.", e)
+                backoff()
             }
-
-            backoff()
         }
     }
 
