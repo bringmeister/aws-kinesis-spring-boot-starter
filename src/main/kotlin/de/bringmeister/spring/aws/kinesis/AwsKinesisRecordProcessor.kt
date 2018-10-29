@@ -50,13 +50,15 @@ class AwsKinesisRecordProcessor(
 
     private fun handleBatch(awsRecords: List<AWSRecord>) {
         val records = toRecords(awsRecords)
+        log.trace("Stream [{}]: process {} records starting with {}",
+            handler.stream, awsRecords.size, awsRecords.firstOrNull()?.sequenceNumber)
 
         val maxAttempts = 1 + configuration.maxRetries
         for (attempt in 1..maxAttempts) {
             try {
                 handler.invoke(records)
             } catch (e: Exception) {
-                log.error("Exception while processing records.", e)
+                log.error("Exception while processing {} records.", handler.stream, e)
                 backoff()
             }
         }
@@ -132,7 +134,7 @@ class AwsKinesisRecordProcessor(
             awsRecord.sequenceNumber, awsRecord.partitionKey, maxAttempts)
     }
 
-    private fun getRecordFromJson(recordData: String): de.bringmeister.spring.aws.kinesis.Record<*, *> {
+    private fun getRecordFromJson(recordData: String): Record<*, *> {
         val record = recordMapper.deserializeFor(recordData, handler)
         val violations = validator?.validate(record) ?: setOf()
         if (violations.isNotEmpty()) {

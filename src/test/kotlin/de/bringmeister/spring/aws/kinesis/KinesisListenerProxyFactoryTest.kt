@@ -17,35 +17,57 @@ class KinesisListenerProxyFactoryTest {
     @Test
     fun `should return list no Kinesis listeners`() {
         val dummyListener = DummyListener()
-        val kinesisListenerProxies = kinesisListenerProxyFactory.proxiesFor(dummyListener).map { it.stream to it}.toMap()
+        val kinesisListenerProxies = kinesisListenerProxyFactory.proxiesFor(dummyListener).map { it.stream to it }.toMap()
 
 
-        assertThat(kinesisListenerProxies).hasSize(4)
-        assertThat(kinesisListenerProxies.keys).contains("stream-1", "stream-2", "stream-3", "stream-4")
-        assertThat(kinesisListenerProxies["stream-1"]?.mode).isEqualTo(ListenerMode.DATA_METADATA)
-        assertThat(kinesisListenerProxies["stream-4"]?.mode).isEqualTo(ListenerMode.RECORD)
-        assertThat(kinesisListenerProxies["stream-3"]?.mode).isEqualTo(ListenerMode.BATCH)
+        assertThat(kinesisListenerProxies).hasSize(3)
+        assertThat(kinesisListenerProxies.keys).contains("stream-data-metadata", "stream-batch", "stream-record")
+        assertThat(kinesisListenerProxies["stream-data-metadata"]?.mode).isEqualTo(ListenerMode.DATA_METADATA)
+        assertThat(kinesisListenerProxies["stream-batch"]?.mode).isEqualTo(ListenerMode.BATCH)
+        assertThat(kinesisListenerProxies["stream-record"]?.mode).isEqualTo(ListenerMode.RECORD)
+    }
+
+    @Test
+    fun `should assign BATCH listener mode`() {
+        val dummyListener = DummyListener()
+        val kinesisListenerProxies = kinesisListenerProxyFactory.proxiesFor(dummyListener).map { it.stream to it }.toMap()
+
+        assertThat(kinesisListenerProxies.containsKey("stream-batch"))
+        assertThat(kinesisListenerProxies["stream-batch"]?.mode).isEqualTo(ListenerMode.BATCH)
+    }
+
+    @Test
+    fun `should assign RECORD listener mode`() {
+        val dummyListener = DummyListener()
+        val kinesisListenerProxies = kinesisListenerProxyFactory.proxiesFor(dummyListener).map { it.stream to it }.toMap()
+
+        assertThat(kinesisListenerProxies.containsKey("stream-record"))
+        assertThat(kinesisListenerProxies["stream-record"]?.mode).isEqualTo(ListenerMode.RECORD)
+    }
+
+    @Test
+    fun `should assign DATA_METADATA listener mode`() {
+        val dummyListener = DummyListener()
+        val kinesisListenerProxies = kinesisListenerProxyFactory.proxiesFor(dummyListener).map { it.stream to it }.toMap()
+
+        assertThat(kinesisListenerProxies.containsKey("stream-data-metadata"))
+        assertThat(kinesisListenerProxies["stream-data-metadata"]?.mode).isEqualTo(ListenerMode.DATA_METADATA)
     }
 
     private class DummyListener {
 
-        @KinesisListener(stream = "stream-1")
-        fun listener1(data: FooCreatedEvent, metadata: EventMetadata) {
+        @KinesisListener(stream = "stream-data-metadata")
+        fun listenerDM(data: FooCreatedEvent, metadata: EventMetadata) {
             // empty
         }
 
-        @KinesisListener(stream = "stream-2")
-        fun listener2(data: FooCreatedEvent, metadata: EventMetadata) {
+        @KinesisListener(stream = "stream-batch")
+        fun listenerBatch(record: List<Record<FooCreatedEvent, EventMetadata>>) {
             // empty
         }
 
-        @KinesisListener(stream = "stream-3")
-        fun listener3(record: List<Record<FooCreatedEvent, EventMetadata>>) {
-            // empty
-        }
-
-        @KinesisListener(stream = "stream-4")
-        fun listener4(record: Record<FooCreatedEvent, EventMetadata>) {
+        @KinesisListener(stream = "stream-record")
+        fun listenerRecord(record: Record<FooCreatedEvent, EventMetadata>) {
             // empty
         }
     }
