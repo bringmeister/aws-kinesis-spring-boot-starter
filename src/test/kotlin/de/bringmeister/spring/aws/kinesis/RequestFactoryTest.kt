@@ -9,6 +9,7 @@ class RequestFactoryTest {
     val objectMapper = ObjectMapper()
     val requestFactory = RequestFactory(objectMapper)
     val event = Record(FooCreatedEvent("any-value"), EventMetadata("test"));
+    val eventWithPartitionKey = RecordWithPartitionKey("partitionKey", FooCreatedEvent("any-value"), EventMetadata("test"));
 
     @Test
     fun `should use event stream name for request`() {
@@ -20,6 +21,12 @@ class RequestFactoryTest {
     fun `should add a random partition key`() {
         val request = requestFactory.request("foo-stream", event)
         assertThat(request.records[0].partitionKey).isNotNull()
+    }
+
+    @Test
+    fun `should add a partition key from recordWithPartitionKey`() {
+        val request = requestFactory.request("foo-stream", eventWithPartitionKey)
+        assertThat(request.records[0].partitionKey).isEqualToIgnoringCase("partitionKey")
     }
 
     @Test

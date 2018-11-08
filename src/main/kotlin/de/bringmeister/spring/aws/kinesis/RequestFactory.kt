@@ -13,9 +13,11 @@ class RequestFactory(private val objectMapper: ObjectMapper) {
             .withStreamName(streamName)
             .withRecords(
                 payload.map {
+                    val partitionKey =
+                        if (it is RecordWithPartitionKey) it.partitionKey else UUID.randomUUID().toString()
                     PutRecordsRequestEntry()
                         .withData(ByteBuffer.wrap(objectMapper.writeValueAsBytes(it)))
-                        .withPartitionKey(UUID.randomUUID().toString())
+                        .withPartitionKey(partitionKey)
                 }
             )
     }
