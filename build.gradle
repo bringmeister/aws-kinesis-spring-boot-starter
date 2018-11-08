@@ -60,7 +60,7 @@ apply plugin: "com.github.kt3k.coveralls"
 
 apply from: "build-scripts/integration-tests.gradle"
 group = 'de.bringmeister'
-version = '0.1.1'
+version = '0.1.2'
 sourceCompatibility = 1.8
 
 compileKotlin {
