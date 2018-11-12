@@ -8,9 +8,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration
+import org.springframework.boot.context.properties.bind.BindException
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
-import org.springframework.validation.BindException
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
 
 @RunWith(SpringRunner::class)
@@ -24,7 +24,7 @@ class AwsKinesisProducerSettingsTest {
     fun `should read producer settings`() {
 
         val settings = builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings())
+            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("region", "local")
             .withProperty("kinesis-url", "http://localhost:14567")
@@ -43,7 +43,7 @@ class AwsKinesisProducerSettingsTest {
     fun `should read consumer settings`() {
 
         val settings = builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings())
+            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("region", "local")
             .withProperty("kinesis-url", "http://localhost:14567")
@@ -62,7 +62,7 @@ class AwsKinesisProducerSettingsTest {
     fun `should read default settings`() {
 
         val settings = builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings())
+            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("region", "eu-central-1")
             .validateUsing(localValidatorFactoryBean)
@@ -80,7 +80,7 @@ class AwsKinesisProducerSettingsTest {
         val kinesisUrl = "http://localhost:1234/kinesis"
         val dynamoDbUrl = "http://localhost:1234/dynamodb"
         val settings = builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings())
+            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("region", "local")
             .withProperty("kinesisUrl", kinesisUrl)
@@ -99,7 +99,7 @@ class AwsKinesisProducerSettingsTest {
     fun `should fail if region is missing`() {
 
         builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings())
+            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("kinesis-url", "http://localhost:14567")
             .validateUsing(localValidatorFactoryBean)
@@ -110,7 +110,7 @@ class AwsKinesisProducerSettingsTest {
     fun `should allow retry configuration`() {
 
         val settings = builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings())
+            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("region", "eu-central-1")
             .withProperty("retry.maxRetries", "3")
@@ -127,7 +127,7 @@ class AwsKinesisProducerSettingsTest {
         val kinesisUrl = "http://localhost:1234/kinesis"
         val dynamoDbUrl = "http://localhost:1234/dynamodb"
         builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings())
+            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("region", "local")
             .withProperty("kinesisUrl", kinesisUrl)

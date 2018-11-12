@@ -30,9 +30,9 @@ import java.util.function.Consumer;
         JavaTestListener.class,
         JacksonConfiguration.class,
         JacksonAutoConfiguration.class,
-        AwsKinesisAutoConfiguration.class,
         KinesisLocalConfiguration.class,
-        KotlinListenerTest.DummyAWSCredentialsConfiguration.class
+        KotlinListenerTest.DummyAWSCredentialsConfiguration.class,
+        AwsKinesisAutoConfiguration.class
 })
 @RunWith(SpringRunner.class)
 public class JavaListenerTest {

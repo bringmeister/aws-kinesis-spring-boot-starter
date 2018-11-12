@@ -28,9 +28,9 @@ import java.util.concurrent.TimeUnit
         KotlinTestListener::class,
         JacksonConfiguration::class,
         JacksonAutoConfiguration::class,
-        AwsKinesisAutoConfiguration::class,
         KinesisLocalConfiguration::class,
-        KotlinListenerTest.DummyAWSCredentialsConfiguration::class
+        KotlinListenerTest.DummyAWSCredentialsConfiguration::class,
+        AwsKinesisAutoConfiguration::class
     ]
 )
 @RunWith(SpringRunner::class)
