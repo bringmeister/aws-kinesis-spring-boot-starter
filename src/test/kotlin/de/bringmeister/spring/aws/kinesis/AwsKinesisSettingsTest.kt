@@ -1,9 +1,8 @@
 package de.bringmeister.spring.aws.kinesis
 
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
 import de.bringmeister.spring.aws.kinesis.ConfigurationPropertiesBuilder.Companion.builder
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -34,9 +33,9 @@ class AwsKinesisProducerSettingsTest {
             .validateUsing(localValidatorFactoryBean)
             .build()
 
-        assertThat(settings.producer[0].streamName, equalTo("foo-event-stream"))
-        assertThat(settings.producer[0].awsAccountId, equalTo("222222222222"))
-        assertThat(settings.producer[0].iamRoleToAssume, equalTo("ExampleKinesisProducerRole"))
+        assertThat(settings.producer[0].streamName).isEqualTo("foo-event-stream")
+        assertThat(settings.producer[0].awsAccountId).isEqualTo("222222222222")
+        assertThat(settings.producer[0].iamRoleToAssume).isEqualTo("ExampleKinesisProducerRole")
     }
 
     @Test
@@ -53,9 +52,9 @@ class AwsKinesisProducerSettingsTest {
             .validateUsing(localValidatorFactoryBean)
             .build()
 
-        assertThat(settings.consumer[0].streamName, equalTo("foo-event-stream"))
-        assertThat(settings.consumer[0].awsAccountId, equalTo("111111111111"))
-        assertThat(settings.consumer[0].iamRoleToAssume, equalTo("ExampleKinesisConsumerRole"))
+        assertThat(settings.consumer[0].streamName).isEqualTo("foo-event-stream")
+        assertThat(settings.consumer[0].awsAccountId).isEqualTo("111111111111")
+        assertThat(settings.consumer[0].iamRoleToAssume).isEqualTo("ExampleKinesisConsumerRole")
     }
 
     @Test
@@ -68,10 +67,10 @@ class AwsKinesisProducerSettingsTest {
             .validateUsing(localValidatorFactoryBean)
             .build()
 
-        assertThat(settings.region, equalTo("eu-central-1"))
-        assertThat(settings.kinesisUrl, equalTo("https://kinesis.eu-central-1.amazonaws.com"))
-        assertThat(settings.dynamoDbSettings!!.url, equalTo("https://dynamodb.eu-central-1.amazonaws.com"))
-        assertThat(settings.initialPositionInStream, equalTo(InitialPositionInStream.LATEST))
+        assertThat(settings.region).isEqualTo("eu-central-1")
+        assertThat(settings.kinesisUrl).isEqualTo("https://kinesis.eu-central-1.amazonaws.com")
+        assertThat(settings.dynamoDbSettings!!.url).isEqualTo("https://dynamodb.eu-central-1.amazonaws.com")
+        assertThat(settings.initialPositionInStream).isEqualTo(InitialPositionInStream.LATEST)
     }
 
     @Test
@@ -89,10 +88,10 @@ class AwsKinesisProducerSettingsTest {
             .validateUsing(localValidatorFactoryBean)
             .build()
 
-        assertThat(settings.region, equalTo("local"))
-        assertThat(settings.kinesisUrl, equalTo(kinesisUrl))
-        assertThat(settings.dynamoDbSettings!!.url, equalTo(dynamoDbUrl))
-        assertThat(settings.initialPositionInStream, equalTo(InitialPositionInStream.TRIM_HORIZON))
+        assertThat(settings.region).isEqualTo("local")
+        assertThat(settings.kinesisUrl).isEqualTo(kinesisUrl)
+        assertThat(settings.dynamoDbSettings!!.url).isEqualTo(dynamoDbUrl)
+        assertThat(settings.initialPositionInStream).isEqualTo(InitialPositionInStream.TRIM_HORIZON)
     }
 
     @Test(expected = BindException::class)
@@ -118,8 +117,8 @@ class AwsKinesisProducerSettingsTest {
             .validateUsing(localValidatorFactoryBean)
             .build()
 
-        assertThat(settings.retry.maxRetries, equalTo(3))
-        assertThat(settings.retry.backoffTimeInMilliSeconds, equalTo(23L))
+        assertThat(settings.retry.maxRetries).isEqualTo(3)
+        assertThat(settings.retry.backoffTimeInMilliSeconds).isEqualTo(23L)
     }
 
     @Test(expected = BindException::class)

@@ -1,7 +1,6 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
 
@@ -14,6 +13,6 @@ class WorkerStarterTest {
         val workerStarter = WorkerStarter()
         workerStarter.start(runnable)
         latch.await() // wait for event-listener thread to process event
-        assertThat(latch.count, equalTo(0L))
+        assertThat(latch.count).isEqualTo(0L)
     }
 }

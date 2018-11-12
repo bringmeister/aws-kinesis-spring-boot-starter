@@ -2,8 +2,6 @@ package de.bringmeister.spring.aws.kinesis
 
 import com.amazonaws.services.kinesis.AmazonKinesis
 import com.amazonaws.services.kinesis.model.PutRecordsRequest
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.anyVararg
 import com.nhaarman.mockito_kotlin.argumentCaptor
@@ -12,6 +10,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.verifyZeroInteractions
 import com.nhaarman.mockito_kotlin.whenever
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import javax.validation.ValidationException
 import javax.validation.Validator
@@ -30,7 +29,9 @@ class AwsKinesisOutboundGatewayTest {
         val producer = mock<AmazonKinesis> { }
 
         val streamName = "some-stream-name"
-        whenever(requestFactory.request(eq(streamName), any<Record<FooCreatedEvent, EventMetadata>>())).thenReturn(request)
+        whenever(requestFactory.request(eq(streamName), any<Record<FooCreatedEvent, EventMetadata>>())).thenReturn(
+            request
+        )
         whenever(clientProvider.clientFor(streamName)).thenReturn(producer)
         whenever(producer.putRecords(any())).thenReturn(mock { })
 
@@ -41,9 +42,9 @@ class AwsKinesisOutboundGatewayTest {
         val stringCaptor = argumentCaptor<String>()
         val dataCaptor = argumentCaptor<Record<FooCreatedEvent, EventMetadata>>()
         verify(requestFactory).request(stringCaptor.capture(), dataCaptor.capture())
-        assertThat(stringCaptor.firstValue, equalTo(streamName))
-        assertThat(dataCaptor.firstValue.data, equalTo(event))
-        assertThat(dataCaptor.firstValue.metadata, equalTo(metadata))
+        assertThat(stringCaptor.firstValue).isEqualTo(streamName)
+        assertThat(dataCaptor.firstValue.data).isEqualTo(event)
+        assertThat(dataCaptor.firstValue.metadata).isEqualTo(metadata)
         verify(clientProvider).clientFor(streamName)
         verify(producer).putRecords(request)
     }
@@ -66,8 +67,11 @@ class AwsKinesisOutboundGatewayTest {
         val invalidEvent = FooCreatedEvent(foo = "")
         val request = mock<PutRecordsRequest> { }
         val producer = mock<AmazonKinesis> { }
-        val outboundGatewayWithoutValidator = AwsKinesisOutboundGateway(clientProvider, requestFactory, streamInitializer)
-        whenever(requestFactory.request(eq(streamName), any<Record<FooCreatedEvent, EventMetadata>>())).thenReturn(request)
+        val outboundGatewayWithoutValidator =
+            AwsKinesisOutboundGateway(clientProvider, requestFactory, streamInitializer)
+        whenever(requestFactory.request(eq(streamName), any<Record<FooCreatedEvent, EventMetadata>>())).thenReturn(
+            request
+        )
         whenever(clientProvider.clientFor(streamName)).thenReturn(producer)
         whenever(producer.putRecords(any())).thenReturn(mock { })
 
