@@ -8,7 +8,7 @@ aws-kinesis-spring-boot-starter
 
 ## Dependencies
 
-- Spring 4.3.0 or higher
+- Spring Boot 2.1.0 or higher
 - [Jackson](https://github.com/FasterXML/jackson)
 
 ## Notes
