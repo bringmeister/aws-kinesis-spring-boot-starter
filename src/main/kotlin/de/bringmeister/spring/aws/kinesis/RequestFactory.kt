@@ -4,7 +4,6 @@ import com.amazonaws.services.kinesis.model.PutRecordsRequest
 import com.amazonaws.services.kinesis.model.PutRecordsRequestEntry
 import com.fasterxml.jackson.databind.ObjectMapper
 import java.nio.ByteBuffer
-import java.util.UUID
 
 class RequestFactory(private val objectMapper: ObjectMapper) {
 
@@ -13,11 +12,9 @@ class RequestFactory(private val objectMapper: ObjectMapper) {
             .withStreamName(streamName)
             .withRecords(
                 payload.map {
-                    val partitionKey =
-                        if (it is RecordWithPartitionKey) it.partitionKey else UUID.randomUUID().toString()
                     PutRecordsRequestEntry()
                         .withData(ByteBuffer.wrap(objectMapper.writeValueAsBytes(it)))
-                        .withPartitionKey(partitionKey)
+                        .withPartitionKey(it.partitionKey)
                 }
             )
     }

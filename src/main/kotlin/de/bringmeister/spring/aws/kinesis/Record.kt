@@ -1,7 +1,7 @@
 package de.bringmeister.spring.aws.kinesis
 
+import java.util.*
 
-open class Record<out D, out M>(val data: D, val metadata: M)
 
-data class RecordWithPartitionKey<out D, out M>(val partitionKey: String,val d: D, val m: M) : Record<D,M>(d,m)
+open class Record<out D, out M>(val data: D, val metadata: M, val partitionKey: String = UUID.randomUUID().toString())
 
