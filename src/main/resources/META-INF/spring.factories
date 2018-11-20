@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=de.bringmeister.spring.aws.kinesis.AwsKinesisAutoConfiguration,\
-de.bringmeister.spring.aws.kinesis.local.KinesisLocalConfiguration
+de.bringmeister.spring.aws.kinesis.KinesisLocalConfiguration

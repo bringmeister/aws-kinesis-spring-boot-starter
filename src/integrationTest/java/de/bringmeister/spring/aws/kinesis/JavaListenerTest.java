@@ -1,22 +1,15 @@
 package de.bringmeister.spring.aws.kinesis;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
-import de.bringmeister.spring.aws.kinesis.local.KinesisLocalConfiguration;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.testcontainers.containers.GenericContainer;
@@ -31,7 +24,6 @@ import java.util.function.Consumer;
         JacksonConfiguration.class,
         JacksonAutoConfiguration.class,
         KinesisLocalConfiguration.class,
-        KotlinListenerTest.DummyAWSCredentialsConfiguration.class,
         AwsKinesisAutoConfiguration.class
 })
 @RunWith(SpringRunner.class)
@@ -70,15 +62,5 @@ public class JavaListenerTest {
 
         // If we come to this point, the LATCH was counted down!
         // This means the event has been consumed - test succeeded!
-    }
-
-    @Configuration
-    private class DummyAWSCredentialsConfiguration {
-
-        @Bean
-        @Primary
-        public AWSCredentialsProvider credentialsProvider() {
-            return new AWSStaticCredentialsProvider(new BasicAWSCredentials("no-key", "no-passwd"));
-        }
     }
 }
