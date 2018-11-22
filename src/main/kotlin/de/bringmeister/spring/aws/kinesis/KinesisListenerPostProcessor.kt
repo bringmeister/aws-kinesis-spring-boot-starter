@@ -4,7 +4,6 @@ import org.springframework.beans.BeansException
 import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.stereotype.Component
 
-@Component
 class KinesisListenerPostProcessor(
     private val kinesisInboundGateway: AwsKinesisInboundGateway,
     private val kinesisListenerProxyFactory: KinesisListenerProxyFactory
