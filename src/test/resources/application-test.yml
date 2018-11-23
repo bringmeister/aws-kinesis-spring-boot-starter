@@ -1,0 +1,18 @@
+spring:
+  profiles:
+    include:
+      - kinesis-local
+
+# Since we are running on our local environment, we don't have a real
+# AWS account. So this ID is just a dummy ID - it doesn't exists.
+AWS_ACCOUNT_ID: 100000000042
+
+aws:
+  kinesis:
+    region: test
+    aws-account-id: ${AWS_ACCOUNT_ID}
+    kinesis-url: http://localhost:14567
+    createStreams: true
+    iam-role-to-assume: test
+    dynamo-db-settings:
+      url: http://localhost:1456
