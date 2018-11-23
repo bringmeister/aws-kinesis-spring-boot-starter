@@ -9,12 +9,9 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 
-@SpringBootApplication
-private class TestApplication
-
 @ActiveProfiles("test")
 @RunWith(SpringRunner::class)
-@SpringBootTest(classes = [TestApplication::class])
+@SpringBootTest(classes = [JacksonConfiguration::class, AwsKinesisAutoConfiguration::class])
 class AwsKinesisAutoConfigurationTest {
 
     @Autowired(required = false)
@@ -32,7 +29,7 @@ class AwsKinesisAutoConfigurationTest {
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
-    classes = [TestApplication::class],
+    classes = [AwsKinesisAutoConfiguration::class],
     properties = ["aws.kinesis.disabled=true"])
 class AwsKinesisAutoConfigurationDisabledTest {
 
