@@ -151,6 +151,16 @@ aws:
         iam-role-to-assume: SpecialKinesisConsumer
 ```
 
+#### Disable auto configuration
+
+Auto configuration can be disabled.
+This might come handy in tests or if you want to apply manual configuration in a more complex AWS setup.
+
+```
+aws:
+  kinesis:
+    disabled: true
+```
 
 ## Usage
 
