@@ -17,7 +17,6 @@ import javax.validation.Validator
 @Configuration
 @AutoConfigureAfter(name = ["org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration"])
 @EnableConfigurationProperties(AwsKinesisSettings::class)
-@ConditionalOnProperty("aws.kinesis.disabled", havingValue = "false", matchIfMissing = true)
 class AwsKinesisAutoConfiguration {
 
     @Bean
@@ -110,6 +109,7 @@ class AwsKinesisAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnProperty("aws.kinesis.listener.disabled", havingValue = "false", matchIfMissing = true)
     fun kinesisListenerPostProcessor(
         inboundGateway: AwsKinesisInboundGateway,
         listenerFactory: KinesisListenerProxyFactory
