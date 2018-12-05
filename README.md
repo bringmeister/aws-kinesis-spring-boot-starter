@@ -151,6 +151,16 @@ aws:
         iam-role-to-assume: SpecialKinesisConsumer
 ```
 
+#### Disable automatic registration of `@KinesisListener`
+
+Automatic registration of `@KinesisListener`-annotated methods can be disabled.
+
+```yaml
+aws:
+  kinesis:
+    listener:
+        disabled: true
+```
 
 ## Usage
 
