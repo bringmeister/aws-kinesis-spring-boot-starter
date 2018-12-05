@@ -50,7 +50,7 @@ class AwsKinesisRecordProcessor(
 
         val maxAttempts = 1 + configuration.maxRetries
         try {
-            log.trace("Stream [{}]: {}", handler.stream, recordJson)
+            log.trace("Stream [{}], Seq. No [{}]: {}", handler.stream, awsRecord.sequenceNumber, recordJson)
 
             val record = getRecordFromJson(recordJson)
 
