@@ -17,13 +17,13 @@ class KinesisListenerProxyFactory(private val aopProxyUtils: AopProxyUtils) {
         return objectToProcess
             .javaClass
             .methods
-            .filter({ method -> method.isAnnotationPresent(KinesisListener::class.java) })
-            .map({ method ->
+            .filter { method -> method.isAnnotationPresent(KinesisListener::class.java) }
+            .map { method ->
                 KinesisListenerProxy(
                     method,
                     bean, // the original bean! not the objectToProcess!
                     method.getAnnotation(KinesisListener::class.java).stream
                 )
-            })
+            }
     }
 }

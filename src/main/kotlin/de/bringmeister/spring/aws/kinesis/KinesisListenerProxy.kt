@@ -1,5 +1,6 @@
 package de.bringmeister.spring.aws.kinesis
 
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
 data class KinesisListenerProxy(
@@ -9,6 +10,10 @@ data class KinesisListenerProxy(
 ): KinesisInboundHandler {
 
     override fun handleMessage(data: Any?, metadata: Any?) {
-        method.invoke(bean, data, metadata)
+        try {
+            method.invoke(bean, data, metadata)
+        } catch (ex: InvocationTargetException) {
+            throw ex.targetException
+        }
     }
 }

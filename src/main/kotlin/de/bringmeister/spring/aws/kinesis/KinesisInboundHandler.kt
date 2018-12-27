@@ -22,5 +22,5 @@ interface KinesisInboundHandler {
      * This is the case if retrying this handler with the same data will cause
      * the same exception to be thrown.
      */
-    class UnrecoverableException(ex: Exception) : Exception(ex)
+    class UnrecoverableException(ex: Exception) : RuntimeException(ex)
 }

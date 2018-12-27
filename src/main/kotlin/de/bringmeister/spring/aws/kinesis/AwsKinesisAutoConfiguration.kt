@@ -3,6 +3,7 @@ package de.bringmeister.spring.aws.kinesis
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
@@ -12,12 +13,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import javax.validation.Validator
 
 @Configuration
 @AutoConfigureAfter(name = ["org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration"])
 @EnableConfigurationProperties(AwsKinesisSettings::class)
 class AwsKinesisAutoConfiguration {
+
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @Bean
     @ConditionalOnMissingBean
@@ -63,9 +65,8 @@ class AwsKinesisAutoConfiguration {
         clientConfigFactory: ClientConfigFactory,
         recordMapper: RecordMapper,
         settings: AwsKinesisSettings,
-        applicationEventPublisher: ApplicationEventPublisher,
-        @Autowired(required = false) validator: Validator?
-    ) = WorkerFactory(clientConfigFactory, recordMapper, settings, applicationEventPublisher, validator)
+        applicationEventPublisher: ApplicationEventPublisher
+    ) = WorkerFactory(clientConfigFactory, recordMapper, settings, applicationEventPublisher)
 
     @Bean
     @ConditionalOnMissingBean
@@ -90,29 +91,20 @@ class AwsKinesisAutoConfiguration {
     fun kinesisOutboundStreamFactory(
         kinesisClientProvider: KinesisClientProvider,
         requestFactory: RequestFactory,
-        @Autowired(required = false) streamInitializer: StreamInitializer?,
-        @Autowired(required = false) validator: Validator?
+        @Autowired(required = false) postProcessors: List<KinesisOutboundStreamPostProcessor>?
     ): KinesisOutboundStreamFactory {
-        return AwsKinesisOutboundStreamFactory(
-            kinesisClientProvider,
-            requestFactory,
-            streamInitializer,
-            validator
-        )
+        val pp = postProcessors ?: emptyList()
+        log.debug("Registering {} KinesisOutboundStreamPostProcessors: [{}]", pp.size, pp)
+        return AwsKinesisOutboundStreamFactory(kinesisClientProvider, requestFactory, pp)
     }
 
     @Bean
     @ConditionalOnMissingBean
     fun kinesisInboundGateway(
         workerFactory: WorkerFactory,
-        workerStarter: WorkerStarter,
-        streamInitializer: StreamInitializer
+        workerStarter: WorkerStarter
     ): AwsKinesisInboundGateway {
-        return AwsKinesisInboundGateway(
-            workerFactory,
-            workerStarter,
-            streamInitializer
-        )
+        return AwsKinesisInboundGateway(workerFactory, workerStarter)
     }
 
     @Bean
@@ -127,9 +119,12 @@ class AwsKinesisAutoConfiguration {
     @ConditionalOnProperty("aws.kinesis.listener.disabled", havingValue = "false", matchIfMissing = true)
     fun kinesisListenerPostProcessor(
         inboundGateway: AwsKinesisInboundGateway,
-        listenerFactory: KinesisListenerProxyFactory
+        listenerFactory: KinesisListenerProxyFactory,
+        @Autowired(required = false) postProcessors: List<KinesisInboundHandlerPostProcessor>?
     ): KinesisListenerPostProcessor {
-        return KinesisListenerPostProcessor(inboundGateway, listenerFactory)
+        val pp = postProcessors ?: emptyList()
+        log.debug("Registering {} KinesisInboundHandlerPostProcessor: [{}]", pp.size, pp)
+        return KinesisListenerPostProcessor(inboundGateway, listenerFactory, pp)
     }
 
     @Bean

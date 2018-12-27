@@ -81,6 +81,9 @@ dependencies {
     compile "org.slf4j:slf4j-api"
     compile "javax.validation:validation-api"
 
+    compileOnly "org.springframework.boot:spring-boot-starter-actuator"
+
+    testCompile "org.springframework.boot:spring-boot-starter-actuator"
     testCompile "org.hibernate:hibernate-validator:6.0.11.Final"
     testCompile "org.springframework.boot:spring-boot-starter-test"
     testCompile "com.nhaarman:mockito-kotlin:1.5.0"

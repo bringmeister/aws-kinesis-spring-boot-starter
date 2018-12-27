@@ -14,15 +14,12 @@ import com.amazonaws.services.kinesis.model.Record
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import java.nio.charset.Charset
-import javax.validation.ValidationException
-import javax.validation.Validator
 
 class AwsKinesisRecordProcessor(
     private val recordMapper: RecordMapper,
     private val configuration: RecordProcessorConfiguration,
     private val handler: KinesisInboundHandler,
-    private val publisher: ApplicationEventPublisher,
-    private val validator: Validator? = null
+    private val publisher: ApplicationEventPublisher
 ) : IRecordProcessor {
 
     private val log = LoggerFactory.getLogger(javaClass.name)
@@ -60,7 +57,7 @@ class AwsKinesisRecordProcessor(
                     return
                 } catch (e: KinesisInboundHandler.UnrecoverableException) {
                     log.error(
-                        "Exception while processing record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
+                        "Unrecoverable exception while processing record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
                         e.cause
                     )
                     return
@@ -84,13 +81,7 @@ class AwsKinesisRecordProcessor(
     }
 
     private fun getRecordFromJson(recordData: String): de.bringmeister.spring.aws.kinesis.Record<*, *> {
-        val record = recordMapper.deserializeFor(recordData, handler)
-        val violations = validator?.validate(record) ?: emptySet()
-        if (violations.isNotEmpty()) {
-            throw ValidationException("$violations")
-        }
-
-        return record
+        return recordMapper.deserializeFor(recordData, handler)
     }
 
     private fun checkpoint(checkpointer: IRecordProcessorCheckpointer) {

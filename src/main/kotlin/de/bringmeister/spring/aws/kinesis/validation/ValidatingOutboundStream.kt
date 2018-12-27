@@ -1,5 +1,7 @@
-package de.bringmeister.spring.aws.kinesis
+package de.bringmeister.spring.aws.kinesis.validation
 
+import de.bringmeister.spring.aws.kinesis.KinesisOutboundStream
+import de.bringmeister.spring.aws.kinesis.Record
 import javax.validation.ValidationException
 import javax.validation.Validator
 

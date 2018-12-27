@@ -1,34 +1,23 @@
 package de.bringmeister.spring.aws.kinesis
 
 import java.util.concurrent.ConcurrentHashMap
-import javax.validation.Validator
 
 class AwsKinesisOutboundStreamFactory(
     private val clientProvider: KinesisClientProvider,
     private val requestFactory: RequestFactory,
-    private val streamInitializer: StreamInitializer? = null,
-    private val validator: Validator? = null
+    private val postProcessors: List<KinesisOutboundStreamPostProcessor> = emptyList()
 ) : KinesisOutboundStreamFactory {
 
     private val streams = ConcurrentHashMap<String, KinesisOutboundStream>()
 
-    override fun forStream(stream: String): KinesisOutboundStream {
-        return streams.computeIfAbsent(stream, this::createStream)
+    override fun forStream(streamName: String): KinesisOutboundStream {
+        return streams.computeIfAbsent(streamName, this::createStream)
     }
 
-    private fun createStream(stream: String): KinesisOutboundStream {
-
-        var outbound: KinesisOutboundStream =
-            AwsKinesisOutboundStream(stream, requestFactory, clientProvider)
-
-        if (validator != null) {
-            outbound = ValidatingOutboundStream(outbound, validator)
+    private fun createStream(streamName: String): KinesisOutboundStream {
+        val initial = AwsKinesisOutboundStream(streamName, requestFactory, clientProvider)
+        return postProcessors.fold(initial) { stream: KinesisOutboundStream, postProcessor ->
+            postProcessor.postProcess(stream)
         }
-
-        if (streamInitializer != null) {
-            outbound = AutoInitializingOutboundStream(outbound, streamInitializer)
-        }
-
-        return outbound
     }
 }

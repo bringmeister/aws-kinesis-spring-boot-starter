@@ -4,14 +4,12 @@ import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcess
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.WorkerStateChangeListener
 import org.springframework.context.ApplicationEventPublisher
-import javax.validation.Validator
 
 class WorkerFactory(
     private val clientConfigFactory: ClientConfigFactory,
     private val recordMapper: RecordMapper,
     private val settings: AwsKinesisSettings,
-    private val applicationEventPublisher: ApplicationEventPublisher,
-    private val validator: Validator? = null
+    private val applicationEventPublisher: ApplicationEventPublisher
 ) {
 
     fun worker(handler: KinesisInboundHandler): Worker {
@@ -19,7 +17,7 @@ class WorkerFactory(
         val processorFactory: () -> (IRecordProcessor) = {
             val configuration =
                 RecordProcessorConfiguration(settings.retry.maxRetries, settings.retry.backoffTimeInMilliSeconds)
-            AwsKinesisRecordProcessor(recordMapper, configuration, handler, applicationEventPublisher, validator)
+            AwsKinesisRecordProcessor(recordMapper, configuration, handler, applicationEventPublisher)
         }
 
         val config = clientConfigFactory.consumerConfig(handler.stream)

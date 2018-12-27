@@ -10,7 +10,6 @@ class AwsKinesisInboundGatewayTest {
 
     val workerStarter: WorkerStarter = mock { }
     val worker = mock<Worker> { }
-    val streamInitializer = mock<StreamInitializer>()
     val kinesisListenerProxy = KinesisListenerProxy(mock { }, mock { }, "my-stream")
     val workerFactory: WorkerFactory = mock {
         on {
@@ -18,7 +17,7 @@ class AwsKinesisInboundGatewayTest {
         } doReturn worker
     }
 
-    val inboundGateway = AwsKinesisInboundGateway(workerFactory, workerStarter, streamInitializer)
+    val inboundGateway = AwsKinesisInboundGateway(workerFactory, workerStarter)
 
     @Test
     fun `when registering a listener instance it should create worker`() {

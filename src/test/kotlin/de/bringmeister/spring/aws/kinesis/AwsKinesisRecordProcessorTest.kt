@@ -13,19 +13,16 @@ import com.amazonaws.services.kinesis.model.Record
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.anyVararg
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.doThrow
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.verifyZeroInteractions
 import com.nhaarman.mockito_kotlin.whenever
 import org.junit.Before
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
 import java.nio.ByteBuffer
-import javax.validation.Validator
 
 class AwsKinesisRecordProcessorTest {
 
@@ -34,7 +31,6 @@ class AwsKinesisRecordProcessorTest {
     val recordMapper = ReflectionBasedRecordMapper(mapper)
     val streamCheckpointer = mock<IRecordProcessorCheckpointer> {}
     val configuration = RecordProcessorConfiguration(2, 1)
-    val validator = mock<Validator>()
     var handlerMock = mock<(FooCreatedEvent, EventMetadata) -> Unit> { }
     var applicationEventPublisher = mock<ApplicationEventPublisher> {
         on { publishEvent(any()) }.then {  }
@@ -51,7 +47,7 @@ class AwsKinesisRecordProcessorTest {
     val kinesisListener = KinesisListenerProxyFactory(AopProxyUtils()).proxiesFor(handler)[0]
 
     val recordProcessor =
-        AwsKinesisRecordProcessor(recordMapper, configuration, kinesisListener, applicationEventPublisher, validator)
+        AwsKinesisRecordProcessor(recordMapper, configuration, kinesisListener, applicationEventPublisher)
 
     @Before
     fun setUp() {
@@ -77,16 +73,6 @@ class AwsKinesisRecordProcessorTest {
     }
 
     @Test
-    fun `should not invoke Kinesis listener on invalid record`() {
-
-        val record1 = wrap(messageJson)
-        whenever(validator.validate(anyVararg<FooCreatedEvent>())).thenReturn(setOf(mock()))
-        recordProcessor.processRecords(record1)
-        verifyZeroInteractions(handlerMock)
-        verify(streamCheckpointer, times(1)).checkpoint()
-    }
-
-    @Test
     fun `should retry processing on exception`() {
 
         whenever(handlerMock.invoke(any(), any()))
@@ -98,6 +84,19 @@ class AwsKinesisRecordProcessorTest {
 
         verify(handlerMock, times(2)).invoke(any(), any()) // handler fails, so it's retried 2 times
         verify(streamCheckpointer).checkpoint() // however, we checkpoint only once after success
+    }
+
+    @Test
+    fun `should not retry processing on UnrecoverableException`() {
+
+        whenever(handlerMock.invoke(any(), any()))
+            .doThrow(KinesisInboundHandler.UnrecoverableException(RuntimeException()))
+
+        val record = wrap(messageJson)
+        recordProcessor.processRecords(record)
+
+        verify(handlerMock).invoke(any(), any()) // handler fails hard without retry
+        verify(streamCheckpointer).checkpoint() // we checkpoint once failed
     }
 
     @Test
