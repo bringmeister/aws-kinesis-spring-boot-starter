@@ -58,6 +58,12 @@ class AwsKinesisRecordProcessor(
                 try {
                     handler.handleMessage(record.data, record.metadata)
                     return
+                } catch (e: KinesisInboundHandler.UnrecoverableException) {
+                    log.error(
+                        "Exception while processing record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
+                        e.cause
+                    )
+                    return
                 } catch (e: Exception) {
                     log.error(
                         "Exception while processing record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
@@ -127,8 +133,6 @@ class AwsKinesisRecordProcessor(
 
     override fun shutdown(shutdownInput: ShutdownInput) {
         log.info("Shutting down record processor")
-        // TODO hook HealthEndpoint into here
-        // Important to checkpoint after reaching end of shard, so we can start processing data from child shards.
         if (shutdownInput.shutdownReason == ShutdownReason.TERMINATE) {
             checkpoint(shutdownInput.checkpointer)
         }
