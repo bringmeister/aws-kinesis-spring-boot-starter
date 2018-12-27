@@ -21,7 +21,12 @@ class AwsKinesisOutboundGatewayTest {
     val clientProvider = mock<KinesisClientProvider> { }
     val streamInitializer = mock<StreamInitializer>()
     val validator = mock<Validator>()
-    val outboundGateway = AwsKinesisOutboundGateway(clientProvider, requestFactory, streamInitializer, validator)
+    val outboundGateway = AwsKinesisOutboundGateway(
+        clientProvider,
+        requestFactory,
+        streamInitializer,
+        validator
+    )
 
     @Test
     fun `should create and send kinesis request`() {
@@ -68,7 +73,11 @@ class AwsKinesisOutboundGatewayTest {
         val request = mock<PutRecordsRequest> { }
         val producer = mock<AmazonKinesis> { }
         val outboundGatewayWithoutValidator =
-            AwsKinesisOutboundGateway(clientProvider, requestFactory, streamInitializer)
+            AwsKinesisOutboundGateway(
+                clientProvider,
+                requestFactory,
+                streamInitializer
+            )
         whenever(requestFactory.request(eq(streamName), any<Record<FooCreatedEvent, EventMetadata>>())).thenReturn(
             request
         )

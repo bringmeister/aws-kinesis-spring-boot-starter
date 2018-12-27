@@ -27,14 +27,14 @@ class AwsKinesisRecordProcessor(
 
     private val log = LoggerFactory.getLogger(javaClass.name)
 
-    override fun initialize(initializationInput: InitializationInput?) {
-        val workerInitializedEvent = WorkerInitializedEvent(handler.stream, initializationInput!!.shardId)
+    override fun initialize(initializationInput: InitializationInput) {
+        val workerInitializedEvent = WorkerInitializedEvent(handler.stream, initializationInput.shardId)
         publisher.publishEvent(workerInitializedEvent)
         log.info("Kinesis listener initialized: [stream={}, shardId={}]", handler.stream, initializationInput.shardId)
     }
 
-    override fun processRecords(processRecordsInput: ProcessRecordsInput?) {
-        processRecordsWithRetries(processRecordsInput!!.records)
+    override fun processRecords(processRecordsInput: ProcessRecordsInput) {
+        processRecordsWithRetries(processRecordsInput.records)
         checkpoint(processRecordsInput.checkpointer)
     }
 
@@ -79,7 +79,7 @@ class AwsKinesisRecordProcessor(
 
     private fun getRecordFromJson(recordData: String): de.bringmeister.spring.aws.kinesis.Record<*, *> {
         val record = recordMapper.deserializeFor(recordData, handler)
-        val violations = validator?.validate(record) ?: setOf()
+        val violations = validator?.validate(record) ?: emptySet()
         if (violations.isNotEmpty()) {
             throw ValidationException("$violations")
         }
@@ -125,11 +125,11 @@ class AwsKinesisRecordProcessor(
         }
     }
 
-    override fun shutdown(shutdownInput: ShutdownInput?) {
+    override fun shutdown(shutdownInput: ShutdownInput) {
         log.info("Shutting down record processor")
         // TODO hook HealthEndpoint into here
         // Important to checkpoint after reaching end of shard, so we can start processing data from child shards.
-        if (shutdownInput?.shutdownReason == ShutdownReason.TERMINATE) {
+        if (shutdownInput.shutdownReason == ShutdownReason.TERMINATE) {
             checkpoint(shutdownInput.checkpointer)
         }
     }

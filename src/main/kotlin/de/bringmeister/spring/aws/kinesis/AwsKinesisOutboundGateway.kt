@@ -1,32 +1,26 @@
 package de.bringmeister.spring.aws.kinesis
 
-import org.slf4j.LoggerFactory
-import javax.validation.ValidationException
 import javax.validation.Validator
 
 class AwsKinesisOutboundGateway(
-    private val clientProvider: KinesisClientProvider,
-    private val requestFactory: RequestFactory,
-    private val streamInitializer: StreamInitializer,
-    private val validator: Validator? = null
+    private val factory: KinesisOutboundStreamFactory
 ) {
 
-    private val log = LoggerFactory.getLogger(this.javaClass)
+    constructor(
+        clientProvider: KinesisClientProvider,
+        requestFactory: RequestFactory,
+        streamInitializer: StreamInitializer? = null,
+        validator: Validator? = null
+    ): this(
+        AwsKinesisOutboundStreamFactory(
+            clientProvider,
+            requestFactory,
+            streamInitializer,
+            validator
+        )
+    )
 
     fun send(streamName: String, vararg records: Record<*, *>) {
-        streamInitializer.createStreamIfMissing(streamName)
-
-        val violations = validator?.validate(records) ?: setOf()
-        if (violations.isNotEmpty()) {
-            throw ValidationException("invalid record: $violations")
-        }
-
-        val request = requestFactory.request(streamName, *records)
-        val kinesis = clientProvider.clientFor(streamName)
-
-        log.trace("Sending records to stream [{}] \nRecords: [{}]", streamName, records)
-        val result = kinesis.putRecords(request)
-
-        log.debug("Successfully send [{}] records", result.records.size)
+        factory.forStream(streamName).send(records)
     }
 }

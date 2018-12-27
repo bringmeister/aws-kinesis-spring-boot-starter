@@ -82,12 +82,23 @@ class AwsKinesisAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     fun kinesisOutboundGateway(
+        streamfactory: KinesisOutboundStreamFactory
+    ) = AwsKinesisOutboundGateway(streamfactory)
+
+    @Bean
+    @ConditionalOnMissingBean
+    fun kinesisOutboundStreamFactory(
         kinesisClientProvider: KinesisClientProvider,
         requestFactory: RequestFactory,
-        streamInitializer: StreamInitializer,
+        @Autowired(required = false) streamInitializer: StreamInitializer?,
         @Autowired(required = false) validator: Validator?
-    ): AwsKinesisOutboundGateway {
-        return AwsKinesisOutboundGateway(kinesisClientProvider, requestFactory, streamInitializer, validator)
+    ): KinesisOutboundStreamFactory {
+        return AwsKinesisOutboundStreamFactory(
+            kinesisClientProvider,
+            requestFactory,
+            streamInitializer,
+            validator
+        )
     }
 
     @Bean
@@ -97,7 +108,11 @@ class AwsKinesisAutoConfiguration {
         workerStarter: WorkerStarter,
         streamInitializer: StreamInitializer
     ): AwsKinesisInboundGateway {
-        return AwsKinesisInboundGateway(workerFactory, workerStarter, streamInitializer)
+        return AwsKinesisInboundGateway(
+            workerFactory,
+            workerStarter,
+            streamInitializer
+        )
     }
 
     @Bean
