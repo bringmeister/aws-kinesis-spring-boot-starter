@@ -7,5 +7,5 @@ interface RecordMapper {
      * will check which argument types the listener expects (== the class of D and M) and it will try to convert
      * the given record data to those types.
      */
-    fun deserializeFor(recordData: String, handler: KinesisListenerProxy): Record<*, *>
+    fun deserializeFor(recordData: String, handler: KinesisInboundHandler): Record<*, *>
 }

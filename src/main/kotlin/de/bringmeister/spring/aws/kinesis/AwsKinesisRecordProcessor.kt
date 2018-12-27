@@ -20,7 +20,7 @@ import javax.validation.Validator
 class AwsKinesisRecordProcessor(
     private val recordMapper: RecordMapper,
     private val configuration: RecordProcessorConfiguration,
-    private val handler: KinesisListenerProxy,
+    private val handler: KinesisInboundHandler,
     private val publisher: ApplicationEventPublisher,
     private val validator: Validator? = null
 ) : IRecordProcessor {
@@ -56,7 +56,7 @@ class AwsKinesisRecordProcessor(
 
             for (attempt in 1..maxAttempts) {
                 try {
-                    handler.invoke(record.data, record.metadata)
+                    handler.handleMessage(record.data, record.metadata)
                     return
                 } catch (e: Exception) {
                     log.error(
@@ -127,6 +127,7 @@ class AwsKinesisRecordProcessor(
 
     override fun shutdown(shutdownInput: ShutdownInput?) {
         log.info("Shutting down record processor")
+        // TODO hook HealthEndpoint into here
         // Important to checkpoint after reaching end of shard, so we can start processing data from child shards.
         if (shutdownInput?.shutdownReason == ShutdownReason.TERMINATE) {
             checkpoint(shutdownInput.checkpointer)

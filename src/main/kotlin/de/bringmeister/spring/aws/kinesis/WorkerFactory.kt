@@ -13,7 +13,7 @@ class WorkerFactory(
     private val validator: Validator? = null
 ) {
 
-    fun worker(handler: KinesisListenerProxy): Worker {
+    fun worker(handler: KinesisInboundHandler): Worker {
 
         val processorFactory: () -> (IRecordProcessor) = {
             val configuration =

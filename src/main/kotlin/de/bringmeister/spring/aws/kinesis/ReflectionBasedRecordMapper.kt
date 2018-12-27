@@ -4,7 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper
 
 class ReflectionBasedRecordMapper(private val objectMapper: ObjectMapper) : RecordMapper {
 
-    override fun deserializeFor(recordData: String, handler: KinesisListenerProxy): Record<*, *> {
+    override fun deserializeFor(recordData: String, handler: KinesisInboundHandler): Record<*, *> {
+
+        if (handler !is KinesisListenerProxy) {
+            throw IllegalArgumentException(
+                "Handler if type ${handler::javaClass} not supported. Expected ${KinesisListenerProxy::javaClass}."
+            )
+        }
+
         val handleMethod = handler.method
         val parameters = handleMethod.parameters
         val dataClass = parameters[0].type

@@ -5,10 +5,10 @@ import java.lang.reflect.Method
 data class KinesisListenerProxy(
     val method: Method,
     val bean: Any,
-    val stream: String
-) {
+    override val stream: String
+): KinesisInboundHandler {
 
-    fun invoke(data: Any?, metadata: Any?) {
+    override fun handleMessage(data: Any?, metadata: Any?) {
         method.invoke(bean, data, metadata)
     }
 }

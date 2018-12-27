@@ -10,7 +10,7 @@ class AwsKinesisInboundGateway(
 
     private val log = LoggerFactory.getLogger(this.javaClass)
 
-    fun register(handler: KinesisListenerProxy) {
+    fun register(handler: KinesisInboundHandler) {
         streamInitializer.createStreamIfMissing(handler.stream)
         val worker = workerFactory.worker(handler)
         workerStarter.start(worker)
