@@ -1,4 +1,5 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=de.bringmeister.spring.aws.kinesis.AwsKinesisAutoConfiguration,\
 de.bringmeister.spring.aws.kinesis.KinesisLocalConfiguration, \
 de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfiguration, \
-de.bringmeister.spring.aws.kinesis.creation.KinesisCreateStreamAutoConfiguration
+de.bringmeister.spring.aws.kinesis.creation.KinesisCreateStreamAutoConfiguration, \
+de.bringmeister.spring.aws.kinesis.health.KinesisHealthAutoConfiguration

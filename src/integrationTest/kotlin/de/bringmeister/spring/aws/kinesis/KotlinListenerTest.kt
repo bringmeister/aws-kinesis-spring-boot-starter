@@ -16,6 +16,7 @@ import org.testcontainers.containers.GenericContainer
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import de.bringmeister.spring.aws.kinesis.creation.KinesisCreateStreamAutoConfiguration
+import de.bringmeister.spring.aws.kinesis.health.KinesisHealthAutoConfiguration
 import de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfiguration
 
 @ActiveProfiles("kinesis-local")
@@ -27,7 +28,8 @@ import de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfig
         KinesisLocalConfiguration::class,
         AwsKinesisAutoConfiguration::class,
         KinesisCreateStreamAutoConfiguration::class,
-        KinesisValidationAutoConfiguration::class
+        KinesisValidationAutoConfiguration::class,
+        KinesisHealthAutoConfiguration::class
     ],
     properties = [
         "aws.kinesis.initial-position-in-stream: TRIM_HORIZON"

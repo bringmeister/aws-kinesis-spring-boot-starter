@@ -16,6 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.testcontainers.containers.GenericContainer;
 import de.bringmeister.spring.aws.kinesis.creation.KinesisCreateStreamAutoConfiguration;
+import de.bringmeister.spring.aws.kinesis.health.KinesisHealthAutoConfiguration;
 import de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfiguration;
 
 import java.util.concurrent.CountDownLatch;
@@ -31,7 +32,8 @@ import java.util.function.Consumer;
         KinesisLocalConfiguration.class,
         AwsKinesisAutoConfiguration.class,
         KinesisCreateStreamAutoConfiguration.class,
-        KinesisValidationAutoConfiguration.class
+        KinesisValidationAutoConfiguration.class,
+        KinesisHealthAutoConfiguration.class
     },
     properties = {
         "aws.kinesis.initial-position-in-stream: TRIM_HORIZON"

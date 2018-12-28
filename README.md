@@ -108,6 +108,28 @@ aws:
 
 By default, `validate` is turned on.
 
+#### Actuator health support
+
+By default, this starter exposes health information for each registered worker as well as stream (exists and available).
+This feature can be disable by setting `management.endpoint.health.<name>.enabled` flag to `false`.
+Name can be any of:
+
+* `kinesis`: disable completely
+* `kinesis.worker`: disable worker health
+* `kinesis.stream`: disable stream health
+
+```yaml
+management:
+  endpoint:
+    health:
+      kinesis:
+        enabled: false
+        worker:
+          enabled: false
+        stream:
+          enabled: false
+```
+
 #### Configuring initial position in stream
 
 You can use one of following values:
