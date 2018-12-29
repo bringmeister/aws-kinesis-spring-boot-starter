@@ -17,8 +17,7 @@ class ValidatingOutboundStreamTest {
 
     private val mockDelegate = mock<KinesisOutboundStream> { }
     private val mockValidator = mock<Validator> { }
-    private val handler =
-        ValidatingOutboundStream(mockDelegate, mockValidator)
+    private val handler = ValidatingOutboundStream(mockDelegate, mockValidator)
 
     private val data = Any()
     private val meta = Any()

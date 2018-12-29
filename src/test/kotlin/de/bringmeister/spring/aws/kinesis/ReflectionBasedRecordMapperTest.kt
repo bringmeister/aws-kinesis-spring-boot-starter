@@ -27,4 +27,10 @@ class ReflectionBasedRecordMapperTest {
         assertThat(message.data).isEqualTo(FooCreatedEvent("any-field"))
         assertThat(message.metadata).isEqualTo(EventMetadata("test"))
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `should throw IllegalArgumentException for unsupported handler types`() {
+        val mapper = ReflectionBasedRecordMapper(mapper)
+        mapper.deserializeFor("any", TestKinesisInboundHandler())
+    }
 }
