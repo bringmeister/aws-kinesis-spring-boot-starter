@@ -44,9 +44,9 @@ class AwsKinesisRecordProcessor<D, M>(
         log.trace("Stream [{}], Seq. No [{}]", handler.stream, awsRecord.sequenceNumber)
 
         val maxAttempts = 1 + configuration.maxRetries
+        var context = AwsExecutionContext()
         try {
             val record = recordDeserializer.deserialize(awsRecord)
-            var context = AwsExecutionContext()
 
             for (attempt in 1..maxAttempts) {
                 try {
@@ -73,6 +73,12 @@ class AwsKinesisRecordProcessor<D, M>(
                 "Exception while transforming record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
                 transformationException
             )
+            try { handler.handleDeserializationError(transformationException, context) }
+            catch (ex: Throwable) {
+                log.error(
+                    "Error occurred in handler during call to handleDeserializationError for stream <{}> [sequenceNumber={}, partitionKey={}]",
+                    handler.stream, awsRecord.sequenceNumber, awsRecord.partitionKey, ex)
+            }
         }
 
         log.warn("Processing of record failed. Skipping it. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}, attempts=$maxAttempts")

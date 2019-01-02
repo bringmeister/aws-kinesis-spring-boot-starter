@@ -10,10 +10,9 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 @ConditionalOnProperty("aws.kinesis.create-streams")
 @AutoConfigureBefore(AwsKinesisAutoConfiguration::class)
-class KinesisCreateStreamAutoConfiguration(
-    private val streamInitializer: StreamInitializer
-) {
+class KinesisCreateStreamAutoConfiguration {
 
     @Bean
-    fun createStreamPostProcessor() = CreateStreamPostProcessor(streamInitializer)
+    fun createStreamPostProcessor(streamInitializer: StreamInitializer) =
+        CreateStreamPostProcessor(streamInitializer)
 }

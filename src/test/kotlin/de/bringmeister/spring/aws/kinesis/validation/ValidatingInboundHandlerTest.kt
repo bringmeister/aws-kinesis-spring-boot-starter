@@ -34,7 +34,7 @@ class ValidatingInboundHandlerTest {
     }
 
     @Test
-    fun `should invoke delegate listener on valid record`() {
+    fun `should invoke delegate on valid record`() {
         whenever(mockValidator.validate(anyVararg<Any>())).thenReturn(emptySet())
         handler.handleRecord(record, context)
         verify(mockDelegate).handleRecord(record, context)

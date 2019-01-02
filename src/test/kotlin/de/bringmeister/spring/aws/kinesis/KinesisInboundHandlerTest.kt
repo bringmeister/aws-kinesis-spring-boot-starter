@@ -29,6 +29,14 @@ class KinesisInboundHandlerTest {
     }
 
     @Test
+    fun `should not throw on handleDeserializationError`() {
+        val cause = RuntimeException("expected")
+        val context = TestKinesisInboundHandler.TestExecutionContext()
+        assertThatCode { handler.handleDeserializationError(cause, context) }
+            .doesNotThrowAnyException()
+    }
+
+    @Test
     fun `should wrap any exception in UnrecoverableException`() {
 
         val ex = MyException()

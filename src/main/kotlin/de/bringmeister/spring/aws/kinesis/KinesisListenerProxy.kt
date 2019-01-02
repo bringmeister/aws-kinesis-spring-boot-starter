@@ -15,7 +15,9 @@ data class KinesisListenerProxy(
     init {
         val handleMethod = method
         val parameters = handleMethod.parameters
+        @Suppress("UNCHECKED_CAST")
         this.dataClass = parameters[0].type as Class<Any>
+        @Suppress("UNCHECKED_CAST")
         this.metaClass = parameters[1].type as Class<Any>
     }
 

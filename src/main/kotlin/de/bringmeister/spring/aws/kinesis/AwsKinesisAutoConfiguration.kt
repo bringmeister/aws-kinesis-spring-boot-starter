@@ -3,7 +3,9 @@ package de.bringmeister.spring.aws.kinesis
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.fasterxml.jackson.databind.ObjectMapper
+import jdk.nashorn.internal.runtime.regexp.joni.Config.log
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
@@ -18,8 +20,6 @@ import org.springframework.context.annotation.Configuration
 @AutoConfigureAfter(name = ["org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration"])
 @EnableConfigurationProperties(AwsKinesisSettings::class)
 class AwsKinesisAutoConfiguration {
-
-    private val log = LoggerFactory.getLogger(javaClass)
 
     @Bean
     @ConditionalOnMissingBean
@@ -90,11 +90,9 @@ class AwsKinesisAutoConfiguration {
     fun kinesisOutboundStreamFactory(
         kinesisClientProvider: KinesisClientProvider,
         requestFactory: RequestFactory,
-        @Autowired(required = false) postProcessors: List<KinesisOutboundStreamPostProcessor>?
+        postProcessors: ObjectProvider<KinesisOutboundStreamPostProcessor>
     ): KinesisOutboundStreamFactory {
-        val pp = postProcessors ?: emptyList()
-        log.debug("Registering {} KinesisOutboundStreamPostProcessors: [{}]", pp.size, pp)
-        return AwsKinesisOutboundStreamFactory(kinesisClientProvider, requestFactory, pp)
+        return AwsKinesisOutboundStreamFactory(kinesisClientProvider, requestFactory, postProcessors)
     }
 
     @Bean
@@ -103,11 +101,9 @@ class AwsKinesisAutoConfiguration {
         workerFactory: WorkerFactory,
         workerStarter: WorkerStarter,
         recordDeserializerFactory: RecordDeserializerFactory,
-        @Autowired(required = false) postProcessors: List<KinesisInboundHandlerPostProcessor>?
+        postProcessors: ObjectProvider<KinesisInboundHandlerPostProcessor>
     ): AwsKinesisInboundGateway {
-        val pp = postProcessors ?: emptyList()
-        log.debug("Registering {} KinesisInboundHandlerPostProcessor: [{}]", pp.size, pp)
-        return AwsKinesisInboundGateway(workerFactory, workerStarter, recordDeserializerFactory, pp)
+        return AwsKinesisInboundGateway(workerFactory, workerStarter, recordDeserializerFactory, postProcessors)
     }
 
     @Bean

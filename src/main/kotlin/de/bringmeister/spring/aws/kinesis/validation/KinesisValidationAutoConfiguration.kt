@@ -15,10 +15,9 @@ import javax.validation.Validator
 @ConditionalOnBean(Validator::class)
 @ConditionalOnProperty("aws.kinesis.validate", matchIfMissing = true)
 @AutoConfigureBefore(AwsKinesisAutoConfiguration::class)
-class KinesisValidationAutoConfiguration(
-    private val validator: Validator
-) {
+class KinesisValidationAutoConfiguration {
 
     @Bean
-    fun validatingPostProcessor() = ValidatingPostProcessor(validator)
+    fun validatingPostProcessor(validator: Validator) =
+        ValidatingPostProcessor(validator)
 }

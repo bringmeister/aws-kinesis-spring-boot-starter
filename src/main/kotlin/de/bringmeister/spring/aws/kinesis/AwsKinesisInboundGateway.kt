@@ -7,7 +7,7 @@ class AwsKinesisInboundGateway(
     private val workerFactory: WorkerFactory,
     private val workerStarter: WorkerStarter,
     private val recordDeserializerFactory: RecordDeserializerFactory,
-    private val handlerPostProcessors: List<KinesisInboundHandlerPostProcessor> = emptyList()
+    private val handlerPostProcessors: Iterable<KinesisInboundHandlerPostProcessor> = emptyList()
 ) {
 
     private val log = LoggerFactory.getLogger(this.javaClass)
@@ -15,6 +15,7 @@ class AwsKinesisInboundGateway(
     fun register(handler: KinesisInboundHandler<*, *>) {
 
         val decorated = handlerPostProcessors.fold(handler) { it, postProcessor ->
+            log.debug("Applying post processor <{}> on inbound handler <{}>", postProcessor, it)
             postProcessor.postProcess(it)
         }
         val worker = worker(decorated)
