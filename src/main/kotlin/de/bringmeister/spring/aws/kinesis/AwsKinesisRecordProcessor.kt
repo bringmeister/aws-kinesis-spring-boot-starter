@@ -10,10 +10,11 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.ShutdownReason
 import com.amazonaws.services.kinesis.clientlibrary.types.InitializationInput
 import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput
-import com.amazonaws.services.kinesis.model.Record
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import java.nio.charset.Charset
+import com.amazonaws.services.kinesis.model.Record as AwsRecord
+import de.bringmeister.spring.aws.kinesis.Record as BmRecord
 
 class AwsKinesisRecordProcessor(
     private val recordMapper: RecordMapper,
@@ -35,12 +36,12 @@ class AwsKinesisRecordProcessor(
         checkpoint(processRecordsInput.checkpointer)
     }
 
-    private fun processRecordsWithRetries(awsRecords: List<Record>) {
+    private fun processRecordsWithRetries(awsRecords: List<AwsRecord>) {
         log.trace("Received [{}] records on stream [{}]", awsRecords.size, handler.stream)
         awsRecords.forEach(this::processRecordWithRetries)
     }
 
-    private fun processRecordWithRetries(awsRecord: Record) {
+    private fun processRecordWithRetries(awsRecord: AwsRecord) {
         val recordJson = Charset.forName("UTF-8")
             .decode(awsRecord.data)
             .toString()
@@ -51,9 +52,10 @@ class AwsKinesisRecordProcessor(
 
             val record = getRecordFromJson(recordJson)
 
+            var context = RecordMessage(record)
             for (attempt in 1..maxAttempts) {
                 try {
-                    handler.handleMessage(record.data, record.metadata)
+                    handler.handleMessage(context)
                     return
                 } catch (e: KinesisInboundHandler.UnrecoverableException) {
                     log.error(
@@ -69,6 +71,7 @@ class AwsKinesisRecordProcessor(
                 }
 
                 backoff()
+                context = context.withRetryAttempt(attempt - 1)
             }
         } catch (transformationException: Exception) {
             log.error(
@@ -124,8 +127,21 @@ class AwsKinesisRecordProcessor(
 
     override fun shutdown(shutdownInput: ShutdownInput) {
         log.info("Shutting down record processor")
+        // Important to checkpoint after reaching end of shard, so we can start processing data from child shards.
         if (shutdownInput.shutdownReason == ShutdownReason.TERMINATE) {
             checkpoint(shutdownInput.checkpointer)
         }
+    }
+
+    private data class RecordMessage(
+        private val record: BmRecord<Any?, Any?>,
+        private val retryAttempt: Int = 0
+    ) : KinesisInboundHandler.Message {
+
+        override fun data() = record.data
+        override fun metadata() = record.metadata
+        override fun isRetry() = retryAttempt > 0
+
+        fun withRetryAttempt(retryAttempt: Int) = RecordMessage(record, retryAttempt)
     }
 }

@@ -10,11 +10,11 @@ class ValidatingInboundHandler(
     private val validator: Validator
 ) : KinesisInboundHandler by delegate {
 
-    override fun handleMessage(data: Any?, metadata: Any?) {
-        val violations = validator.validate(data)
+    override fun handleMessage(message: KinesisInboundHandler.Message) {
+        val violations = validator.validate(message.data())
         if (violations.isNotEmpty()) {
             throw UnrecoverableException(ValidationException("$violations"))
         }
-        delegate.handleMessage(data, metadata)
+        delegate.handleMessage(message)
     }
 }

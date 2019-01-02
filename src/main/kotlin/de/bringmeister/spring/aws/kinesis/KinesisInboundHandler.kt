@@ -12,7 +12,7 @@ interface KinesisInboundHandler {
      * May be retried when an exception is thrown, except when throwing
      * [UnrecoverableException].
      */
-    fun handleMessage(data: Any?, metadata: Any?)
+    fun handleMessage(message: Message)
 
     /** Indicates that the worker is shutting down. */
     fun shutdown() { }
@@ -22,5 +22,17 @@ interface KinesisInboundHandler {
      * This is the case if retrying this handler with the same data will cause
      * the same exception to be thrown.
      */
-    class UnrecoverableException(ex: Exception) : RuntimeException(ex)
+    class UnrecoverableException(ex: Exception) : RuntimeException(ex) {
+        companion object {
+            inline fun <reified T: Any> unrecoverable(runnable: () -> T) =
+                try { runnable() }
+                catch (ex: Exception) { throw KinesisInboundHandler.UnrecoverableException(ex) }
+        }
+    }
+
+    interface Message {
+        fun data(): Any?
+        fun metadata(): Any?
+        fun isRetry(): Boolean
+    }
 }
