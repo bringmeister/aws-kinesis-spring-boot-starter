@@ -3,6 +3,7 @@ package de.bringmeister.spring.aws.kinesis
 import com.github.dockerjava.api.model.ExposedPort
 import com.github.dockerjava.api.model.PortBinding
 import com.github.dockerjava.api.model.Ports
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,6 +28,9 @@ import de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfig
         AwsKinesisAutoConfiguration::class,
         KinesisCreateStreamAutoConfiguration::class,
         KinesisValidationAutoConfiguration::class
+    ],
+    properties = [
+        "aws.kinesis.initial-position-in-stream: TRIM_HORIZON"
     ]
 )
 @RunWith(SpringRunner::class)
@@ -62,10 +66,9 @@ class KotlinListenerTest {
 
         outbound.send("foo-event-stream", Record(fooEvent, metadata))
 
-        latch.await(1, TimeUnit.MINUTES) // wait for event-listener thread to process event
+        val messageReceived = latch.await(1, TimeUnit.MINUTES) // wait for event-listener thread to process event
 
-        // If we come to this point, the LATCH was counted down!
-        // This means the event has been consumed - test succeeded!
+        assertThat(messageReceived).isTrue()
     }
 }
 
