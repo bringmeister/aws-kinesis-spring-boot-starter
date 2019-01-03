@@ -97,7 +97,7 @@ By default, `create-streams` is turned off and streams *must* be created externa
 #### Validate data send and received
 
 By default, this starter validates all data send and received automatically if a bean of type `javax.validation.Validator` is found.
-Yu can disable this feature by setting `validate` flag to `false`:
+This feature can be disable by setting `validate` flag to `false`:
 
 ```yaml
 aws:
