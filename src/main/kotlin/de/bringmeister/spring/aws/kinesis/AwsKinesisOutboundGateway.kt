@@ -25,6 +25,6 @@ class AwsKinesisOutboundGateway(
     )
 
     fun send(streamName: String, vararg records: Record<*, *>) {
-        factory.forStream(streamName).send(records)
+        factory.forStream(streamName).send(*records)
     }
 }

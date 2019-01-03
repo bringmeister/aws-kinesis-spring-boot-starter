@@ -15,6 +15,6 @@ class ValidatingOutboundStream(
         if (violations.isNotEmpty()) {
             throw ValidationException("invalid records: $violations")
         }
-        return delegate.send(records)
+        return delegate.send(*records)
     }
 }

@@ -37,6 +37,6 @@ class ValidatingOutboundStreamTest {
     fun `should invoke delegate listener on valid record`() {
         whenever(mockValidator.validate(anyVararg<Any>())).thenReturn(emptySet())
         handler.send(record)
-        verify(mockDelegate).send(argWhere { it[0] == record })
+        verify(mockDelegate).send(argWhere { it == record })
     }
 }
