@@ -11,9 +11,10 @@ import org.springframework.validation.Validator
 import java.util.ArrayList
 import java.util.Properties
 
-class ConfigurationPropertiesBuilder<T> {
+class ConfigurationPropertiesBuilder<T>(
+    private val clazzToBindTo: Class<T>
+) {
 
-    private var clazzToBindTo: Class<*>? = null
     private var fileName: String? = null
     private var prefix: String? = null
     private var validator: Validator? = null
@@ -21,14 +22,9 @@ class ConfigurationPropertiesBuilder<T> {
     private val propertiesToRemove = ArrayList<String>()
 
     companion object {
-        fun <T> builder(): ConfigurationPropertiesBuilder<T> {
-            return ConfigurationPropertiesBuilder()
+        inline fun <reified T> builder(): ConfigurationPropertiesBuilder<T> {
+            return ConfigurationPropertiesBuilder(T::class.java)
         }
-    }
-
-    fun populate(clazzToBindTo: Class<*>): ConfigurationPropertiesBuilder<T> {
-        this.clazzToBindTo = clazzToBindTo
-        return this
     }
 
     fun fromFile(fileName: String): ConfigurationPropertiesBuilder<T> {
@@ -58,18 +54,20 @@ class ConfigurationPropertiesBuilder<T> {
 
     fun build(): T {
 
+        requireNotNull(prefix) { "Prefix must not be null" }
+
         val propertiesFromFile = loadYamlProperties(fileName)
-        propertiesToRemove.forEach({ properties.remove(it) })
-        propertiesToRemove.forEach({ propertiesFromFile.remove(it) })
+        propertiesToRemove.forEach { properties.remove(it) }
+        propertiesToRemove.forEach { propertiesFromFile.remove(it) }
 
         val propertySources = MapConfigurationPropertySource()
         propertySources.putAll(PropertiesPropertySource("properties", properties).source)
         propertySources.putAll(PropertiesPropertySource("propertiesFromFile", propertiesFromFile).source)
 
-        val bindHandler = ValidationBindHandler(validator!!)
+        val bindHandler = validator?.let { ValidationBindHandler(it) }
         val binder = Binder(propertySources)
 
-        return binder.bind(prefix, Bindable.of(clazzToBindTo), bindHandler).get() as T
+        return binder.bind(prefix, Bindable.of(clazzToBindTo), bindHandler).get()
     }
 
     private fun loadYamlProperties(fileName: String?): Properties {
