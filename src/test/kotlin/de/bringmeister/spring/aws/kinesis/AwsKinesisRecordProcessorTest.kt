@@ -155,6 +155,16 @@ class AwsKinesisRecordProcessorTest {
     }
 
     @Test
+    fun `should not bubble exception when checkpointing on ThrottlingException runs out of retries`() {
+
+        whenever(streamCheckpointer.checkpoint()).doThrow(ThrottlingException::class)
+
+        val record = wrap(messageJson)
+        assertThatCode { recordProcessor.processRecords(record) }
+            .doesNotThrowAnyException()
+    }
+
+    @Test
     fun `shouldn't retry checkpointing on ShutdownException`() {
 
         whenever(streamCheckpointer.checkpoint())
