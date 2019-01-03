@@ -1,5 +1,7 @@
 package de.bringmeister.spring.aws.kinesis;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.PortBinding;
@@ -19,13 +21,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 @ActiveProfiles("kinesis-local")
-@SpringBootTest(classes = {
+@SpringBootTest(
+    classes = {
         JavaTestListener.class,
         JacksonConfiguration.class,
         JacksonAutoConfiguration.class,
         KinesisLocalConfiguration.class,
         AwsKinesisAutoConfiguration.class
-})
+    },
+    properties = {
+        "aws.kinesis.initial-position-in-stream: TRIM_HORIZON"
+    }
+)
 @RunWith(SpringRunner.class)
 public class JavaListenerTest {
 
@@ -58,9 +65,8 @@ public class JavaListenerTest {
 
         outbound.send("foo-event-stream", new Record(fooEvent, metadata));
 
-        LATCH.await(1, TimeUnit.MINUTES); // wait for event-listener thread to process event
+        boolean messageReceived = LATCH.await(1, TimeUnit.MINUTES); // wait for event-listener thread to process event
 
-        // If we come to this point, the LATCH was counted down!
-        // This means the event has been consumed - test succeeded!
+        assertThat(messageReceived).isTrue();
     }
 }
