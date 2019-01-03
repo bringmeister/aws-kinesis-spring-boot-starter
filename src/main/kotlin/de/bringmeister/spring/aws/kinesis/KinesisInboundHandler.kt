@@ -24,7 +24,7 @@ interface KinesisInboundHandler {
      */
     class UnrecoverableException(ex: Exception) : RuntimeException(ex) {
         companion object {
-            inline fun <reified T: Any> unrecoverable(runnable: () -> T) =
+            inline fun <reified T: Any?> unrecoverable(runnable: () -> T) =
                 try { runnable() }
                 catch (ex: Exception) { throw KinesisInboundHandler.UnrecoverableException(ex) }
         }
