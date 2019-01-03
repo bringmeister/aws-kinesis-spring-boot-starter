@@ -51,11 +51,11 @@ class AwsKinesisRecordProcessor(
             log.trace("Stream [{}], Seq. No [{}]: {}", handler.stream, awsRecord.sequenceNumber, recordJson)
 
             val record = getRecordFromJson(recordJson)
+            var context = AwsExecutonContext()
 
-            var context = RecordMessage(record)
             for (attempt in 1..maxAttempts) {
                 try {
-                    handler.handleMessage(context)
+                    handler.handleRecord(record, context)
                     return
                 } catch (e: KinesisInboundHandler.UnrecoverableException) {
                     log.error(
@@ -133,15 +133,12 @@ class AwsKinesisRecordProcessor(
         }
     }
 
-    private data class RecordMessage(
-        private val record: BmRecord<Any?, Any?>,
+    private data class AwsExecutonContext(
         private val retryAttempt: Int = 0
-    ) : KinesisInboundHandler.Message {
+    ) : KinesisInboundHandler.ExecutionContext {
 
-        override fun data() = record.data
-        override fun metadata() = record.metadata
-        override fun isRetry() = retryAttempt > 0
+        override val isRetry get() = retryAttempt > 0
 
-        fun withRetryAttempt(retryAttempt: Int) = RecordMessage(record, retryAttempt)
+        fun withRetryAttempt(retryAttempt: Int) = AwsExecutonContext(retryAttempt)
     }
 }

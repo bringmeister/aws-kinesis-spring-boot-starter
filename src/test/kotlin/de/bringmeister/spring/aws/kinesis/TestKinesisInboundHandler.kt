@@ -3,15 +3,9 @@ package de.bringmeister.spring.aws.kinesis;
 internal class TestKinesisInboundHandler : KinesisInboundHandler {
 
     override val stream = "test"
-    override fun handleMessage(message: KinesisInboundHandler.Message) { }
+    override fun handleRecord(record: Record<*, *>, context: KinesisInboundHandler.ExecutionContext) { }
 
-    data class TestMessage(
-        private val data: Any? = Any(),
-        private val metadata: Any? = Any(),
-        private val isRetry: Boolean = false
-    ) : KinesisInboundHandler.Message {
-        override fun data() = data
-        override fun metadata() = metadata
-        override fun isRetry() = isRetry
-    }
+    data class TestExecutionContext(
+        override val isRetry: Boolean = false
+    ) : KinesisInboundHandler.ExecutionContext
 }

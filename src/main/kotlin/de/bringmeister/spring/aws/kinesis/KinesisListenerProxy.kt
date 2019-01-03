@@ -9,9 +9,9 @@ data class KinesisListenerProxy(
     override val stream: String
 ): KinesisInboundHandler {
 
-    override fun handleMessage(message: KinesisInboundHandler.Message) {
+    override fun handleRecord(record: Record<*, *>, context: KinesisInboundHandler.ExecutionContext) {
         try {
-            method.invoke(bean, message.data(), message.metadata())
+            method.invoke(bean, record.data, record.metadata)
         } catch (ex: InvocationTargetException) {
             throw ex.targetException
         }

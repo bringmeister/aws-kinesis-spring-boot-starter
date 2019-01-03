@@ -12,7 +12,7 @@ interface KinesisInboundHandler {
      * May be retried when an exception is thrown, except when throwing
      * [UnrecoverableException].
      */
-    fun handleMessage(message: Message)
+    fun handleRecord(record: Record<*, *>, context: ExecutionContext)
 
     /** Indicates that the worker is shutting down. */
     fun shutdown() { }
@@ -30,9 +30,7 @@ interface KinesisInboundHandler {
         }
     }
 
-    interface Message {
-        fun data(): Any?
-        fun metadata(): Any?
-        fun isRetry(): Boolean
+    interface ExecutionContext {
+        val isRetry: Boolean
     }
 }
