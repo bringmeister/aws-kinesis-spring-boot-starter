@@ -20,6 +20,7 @@ import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatCode
 import org.junit.Before
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
@@ -105,6 +106,24 @@ class AwsKinesisRecordProcessorTest {
 
         verify(handlerMock).invoke(any(), any()) // handler fails hard without retry
         verify(streamCheckpointer).checkpoint() // we checkpoint once failed
+    }
+
+    @Test
+    fun `should not bubble exception when all retries fail`() {
+
+        whenever(handlerMock.invoke(any(), any())).doThrow(RuntimeException::class)
+
+        val record = wrap(messageJson)
+        assertThatCode { recordProcessor.processRecords(record) }
+            .doesNotThrowAnyException()
+    }
+
+    @Test
+    fun `should not bubble exception when deserialization fails`() {
+
+        val record = wrap("invalid")
+        assertThatCode { recordProcessor.processRecords(record) }
+            .doesNotThrowAnyException()
     }
 
     @Test
