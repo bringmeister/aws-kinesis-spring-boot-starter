@@ -23,7 +23,6 @@ class AwsKinesisProducerSettingsTest {
     fun `should read producer settings`() {
 
         val settings = builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("region", "local")
             .withProperty("kinesis-url", "http://localhost:14567")
@@ -42,7 +41,6 @@ class AwsKinesisProducerSettingsTest {
     fun `should read consumer settings`() {
 
         val settings = builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("region", "local")
             .withProperty("kinesis-url", "http://localhost:14567")
@@ -61,7 +59,6 @@ class AwsKinesisProducerSettingsTest {
     fun `should read default settings`() {
 
         val settings = builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("region", "eu-central-1")
             .validateUsing(localValidatorFactoryBean)
@@ -79,7 +76,6 @@ class AwsKinesisProducerSettingsTest {
         val kinesisUrl = "http://localhost:1234/kinesis"
         val dynamoDbUrl = "http://localhost:1234/dynamodb"
         val settings = builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("region", "local")
             .withProperty("kinesisUrl", kinesisUrl)
@@ -98,7 +94,6 @@ class AwsKinesisProducerSettingsTest {
     fun `should fail if region is missing`() {
 
         builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("kinesis-url", "http://localhost:14567")
             .validateUsing(localValidatorFactoryBean)
@@ -109,7 +104,6 @@ class AwsKinesisProducerSettingsTest {
     fun `should allow retry configuration`() {
 
         val settings = builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("region", "eu-central-1")
             .withProperty("retry.maxRetries", "3")
@@ -126,7 +120,6 @@ class AwsKinesisProducerSettingsTest {
         val kinesisUrl = "http://localhost:1234/kinesis"
         val dynamoDbUrl = "http://localhost:1234/dynamodb"
         builder<AwsKinesisSettings>()
-            .populate(AwsKinesisSettings::class.java)
             .withPrefix("aws.kinesis")
             .withProperty("region", "local")
             .withProperty("kinesisUrl", kinesisUrl)
@@ -134,5 +127,40 @@ class AwsKinesisProducerSettingsTest {
             .withProperty("initialPositionInStream", "WRONG_VALUE")
             .validateUsing(localValidatorFactoryBean)
             .build()
+    }
+
+    @Test
+    fun `should infer kinesisUrl from region`() {
+        val settings = builder<AwsKinesisSettings>()
+            .withPrefix("aws.kinesis")
+            .withProperty("region", "some-region")
+            .build()
+        assertThat(settings.kinesisUrl)
+            .isNotNull()
+            .isEqualTo("https://kinesis.some-region.amazonaws.com")
+    }
+
+    @Test
+    fun `should infer dynamodbUrl from region`() {
+        val settings = builder<AwsKinesisSettings>()
+            .withPrefix("aws.kinesis")
+            .withProperty("region", "some-region")
+            .build()
+        assertThat(settings.dynamoDbSettings).isNotNull
+        assertThat(settings.dynamoDbSettings!!.url)
+            .isNotNull()
+            .isEqualTo("https://dynamodb.some-region.amazonaws.com")
+    }
+
+    @Test
+    fun `should return null urls when urls and regions are not set`() {
+        // This test is for our flaky coveralls mainly, because it sometimes
+        // reports the <return null> lines and sometimes doesn't.
+        val settings = builder<AwsKinesisSettings>()
+            .withPrefix("aws.kinesis")
+            .withProperty("initialPositionInStream", "TRIM_HORIZON")
+            .build()
+        assertThat(settings.kinesisUrl).isNull()
+        assertThat(settings.dynamoDbSettings).isNull()
     }
 }
