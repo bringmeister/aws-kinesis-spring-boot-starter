@@ -1,7 +1,7 @@
 package de.bringmeister.spring.aws.kinesis
 
-import de.bringmeister.spring.aws.kinesis.creation.CreateStreamOutboundStreamPostProcessor
-import de.bringmeister.spring.aws.kinesis.validation.ValidatingOutboundStreamPostProcessor
+import de.bringmeister.spring.aws.kinesis.creation.CreateStreamPostProcessor
+import de.bringmeister.spring.aws.kinesis.validation.ValidatingPostProcessor
 import javax.validation.Validator
 
 class AwsKinesisOutboundGateway(
@@ -18,8 +18,8 @@ class AwsKinesisOutboundGateway(
             clientProvider,
             requestFactory,
             listOfNotNull(
-                streamInitializer?.let(::CreateStreamOutboundStreamPostProcessor),
-                validator?.let(::ValidatingOutboundStreamPostProcessor)
+                streamInitializer?.let(::CreateStreamPostProcessor),
+                validator?.let(::ValidatingPostProcessor)
             )
         )
     )
