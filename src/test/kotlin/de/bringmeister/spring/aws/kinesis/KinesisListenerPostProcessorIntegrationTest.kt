@@ -1,5 +1,6 @@
 package de.bringmeister.spring.aws.kinesis
 
+import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.check
 import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
 import org.assertj.core.api.Assertions.assertThat
@@ -42,7 +43,7 @@ class KinesisListenerPostProcessorIntegrationTest {
         verify(gateway).register(check {
             assertThat(it.stream).isEqualTo("test-stream")
             assertThat((it as KinesisListenerProxy).bean).isSameAs(listener)
-        })
+        }, any())
     }
 }
 

@@ -18,7 +18,7 @@ import java.util.concurrent.CountDownLatch
 @RunWith(SpringRunner::class)
 class AwsKinesisStreamInitializingReadyEventTest {
 
-    val recordMapper = mock<ReflectionBasedRecordMapper>()
+    val recordDeserializer = mock<RecordDeserializer>()
     val configuration = mock<RecordProcessorConfiguration>()
     val handlerMock = mock<(FooCreatedEvent, EventMetadata) -> Unit> { }
     final var handler = object {
@@ -42,7 +42,7 @@ class AwsKinesisStreamInitializingReadyEventTest {
 
     @Test
     fun `should publish initializing ready event`() {
-        AwsKinesisRecordProcessor(recordMapper, configuration, kinesisListener, publisher)
+        AwsKinesisRecordProcessor(recordDeserializer, configuration, kinesisListener, publisher)
             .initialize(initializationInput)
         countDownLatch.await()
 

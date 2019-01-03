@@ -7,17 +7,16 @@ import org.springframework.context.ApplicationEventPublisher
 
 class WorkerFactory(
     private val clientConfigFactory: ClientConfigFactory,
-    private val recordMapper: RecordMapper,
     private val settings: AwsKinesisSettings,
     private val applicationEventPublisher: ApplicationEventPublisher
 ) {
 
-    fun worker(handler: KinesisInboundHandler): Worker {
+    fun worker(handler: KinesisInboundHandler, recordDeserializer: RecordDeserializer): Worker {
 
         val processorFactory: () -> (IRecordProcessor) = {
             val configuration =
                 RecordProcessorConfiguration(settings.retry.maxRetries, settings.retry.backoffTimeInMilliSeconds)
-            AwsKinesisRecordProcessor(recordMapper, configuration, handler, applicationEventPublisher)
+            AwsKinesisRecordProcessor(recordDeserializer, configuration, handler, applicationEventPublisher)
         }
 
         val config = clientConfigFactory.consumerConfig(handler.stream)

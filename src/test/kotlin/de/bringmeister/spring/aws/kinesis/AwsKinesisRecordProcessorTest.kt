@@ -19,6 +19,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
@@ -28,7 +29,6 @@ class AwsKinesisRecordProcessorTest {
 
     val messageJson = """{"data":{"foo":"any-field"},"metadata":{"sender":"test"}}"""
     val mapper = ObjectMapper().registerModule(KotlinModule())
-    val recordMapper = ReflectionBasedRecordMapper(mapper)
     val streamCheckpointer = mock<IRecordProcessorCheckpointer> {}
     val configuration = RecordProcessorConfiguration(2, 1)
     var handlerMock = mock<(FooCreatedEvent, EventMetadata) -> Unit> { }
@@ -45,9 +45,13 @@ class AwsKinesisRecordProcessorTest {
     }
 
     val kinesisListener = KinesisListenerProxyFactory(AopProxyUtils()).proxiesFor(handler)[0]
+    private val kinesisListenerCapture = KinesisListenerCapture(kinesisListener)
+
+    val recordDeserializer = KinesisListenerProxyRecordDeserializerFactory(mapper)
+        .deserializerFor(kinesisListener)
 
     val recordProcessor =
-        AwsKinesisRecordProcessor(recordMapper, configuration, kinesisListener, applicationEventPublisher)
+        AwsKinesisRecordProcessor(recordDeserializer, configuration, kinesisListenerCapture, applicationEventPublisher)
 
     @Before
     fun setUp() {
@@ -84,6 +88,10 @@ class AwsKinesisRecordProcessorTest {
 
         verify(handlerMock, times(2)).invoke(any(), any()) // handler fails, so it's retried 2 times
         verify(streamCheckpointer).checkpoint() // however, we checkpoint only once after success
+
+        val contexts = kinesisListenerCapture.contexts()
+        assertThat(contexts[0].isRetry).isFalse()
+        assertThat(contexts[1].isRetry).isTrue()
     }
 
     @Test
@@ -167,5 +175,26 @@ class AwsKinesisRecordProcessorTest {
         return ProcessRecordsInput()
             .withRecords(records)
             .withCheckpointer(streamCheckpointer)
+    }
+
+    private class KinesisListenerCapture(
+        private val kinesisListener: KinesisListenerProxy
+    ) : KinesisInboundHandler by kinesisListener {
+
+        private val contexts = mutableListOf<KinesisInboundHandler.ExecutionContext>()
+
+        override fun handleRecord(
+            record: de.bringmeister.spring.aws.kinesis.Record<*, *>,
+            context: KinesisInboundHandler.ExecutionContext
+        ) {
+            contexts.add(context)
+            kinesisListener.handleRecord(record, context)
+        }
+
+        fun contexts(): List<KinesisInboundHandler.ExecutionContext> {
+            val list = contexts.toList()
+            contexts.clear()
+            return list
+        }
     }
 }

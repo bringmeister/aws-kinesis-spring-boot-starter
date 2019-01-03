@@ -1,11 +1,13 @@
 package de.bringmeister.spring.aws.kinesis
 
+import com.amazonaws.services.kinesis.model.Record
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import java.nio.ByteBuffer
 
-class ReflectionBasedRecordMapperTest {
+class KinesisListenerProxyRecordDeserializerFactoryTest {
 
     val messageJson = """{"data":{"foo":"any-field"},"metadata":{"sender":"test"}}"""
     val mapper = ObjectMapper().registerModule(KotlinModule())
@@ -21,16 +23,13 @@ class ReflectionBasedRecordMapperTest {
 
         val kinesisListenerProxy = KinesisListenerProxyFactory(AopProxyUtils()).proxiesFor(handler)[0]
 
-        val recordMapper = ReflectionBasedRecordMapper(mapper)
-        val message = recordMapper.deserializeFor(messageJson, kinesisListenerProxy)
+        val deserializer = KinesisListenerProxyRecordDeserializerFactory(mapper)
+            .deserializerFor(kinesisListenerProxy)
+        val awsRecord = Record()
+            .withData(ByteBuffer.wrap(messageJson.toByteArray(Charsets.UTF_8)))
+        val message = deserializer.deserialize(awsRecord)
 
         assertThat(message.data).isEqualTo(FooCreatedEvent("any-field"))
         assertThat(message.metadata).isEqualTo(EventMetadata("test"))
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun `should throw IllegalArgumentException for unsupported handler types`() {
-        val mapper = ReflectionBasedRecordMapper(mapper)
-        mapper.deserializeFor("any", TestKinesisInboundHandler())
     }
 }

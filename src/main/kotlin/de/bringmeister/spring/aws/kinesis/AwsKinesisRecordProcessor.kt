@@ -12,12 +12,11 @@ import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
-import java.nio.charset.Charset
 import com.amazonaws.services.kinesis.model.Record as AwsRecord
 import de.bringmeister.spring.aws.kinesis.Record as BmRecord
 
 class AwsKinesisRecordProcessor(
-    private val recordMapper: RecordMapper,
+    private val recordDeserializer: RecordDeserializer,
     private val configuration: RecordProcessorConfiguration,
     private val handler: KinesisInboundHandler,
     private val publisher: ApplicationEventPublisher
@@ -42,15 +41,11 @@ class AwsKinesisRecordProcessor(
     }
 
     private fun processRecordWithRetries(awsRecord: AwsRecord) {
-        val recordJson = Charset.forName("UTF-8")
-            .decode(awsRecord.data)
-            .toString()
+        log.trace("Stream [{}], Seq. No [{}]", handler.stream, awsRecord.sequenceNumber)
 
         val maxAttempts = 1 + configuration.maxRetries
         try {
-            log.trace("Stream [{}], Seq. No [{}]: {}", handler.stream, awsRecord.sequenceNumber, recordJson)
-
-            val record = getRecordFromJson(recordJson)
+            val record = recordDeserializer.deserialize(awsRecord)
             var context = AwsExecutonContext()
 
             for (attempt in 1..maxAttempts) {
@@ -71,7 +66,7 @@ class AwsKinesisRecordProcessor(
                 }
 
                 backoff()
-                context = context.withRetryAttempt(attempt - 1)
+                context = context.withRetryAttempt(attempt)
             }
         } catch (transformationException: Exception) {
             log.error(
@@ -81,10 +76,6 @@ class AwsKinesisRecordProcessor(
         }
 
         log.warn("Processing of record failed. Skipping it. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}, attempts=$maxAttempts")
-    }
-
-    private fun getRecordFromJson(recordData: String): de.bringmeister.spring.aws.kinesis.Record<*, *> {
-        return recordMapper.deserializeFor(recordData, handler)
     }
 
     private fun checkpoint(checkpointer: IRecordProcessorCheckpointer) {
