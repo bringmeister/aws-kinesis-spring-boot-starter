@@ -5,9 +5,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor
 
 class KinesisListenerPostProcessor(
     private val kinesisInboundGateway: AwsKinesisInboundGateway,
-    private val kinesisListenerProxyFactory: KinesisListenerProxyFactory,
-    private val recordDeserializerFactory: RecordDeserializerFactory,
-    private val handlerPostProcessors: List<KinesisInboundHandlerPostProcessor> = emptyList()
+    private val kinesisListenerProxyFactory: KinesisListenerProxyFactory
 ) : BeanPostProcessor {
 
     @Throws(BeansException::class)
@@ -15,13 +13,7 @@ class KinesisListenerPostProcessor(
 
         kinesisListenerProxyFactory
             .proxiesFor(bean)
-            .forEach {
-                val decorated = handlerPostProcessors.fold(it) { handler: KinesisInboundHandler, postProcessor ->
-                    postProcessor.postProcess(handler)
-                }
-                val recordDeserializer = recordDeserializerFactory.deserializerFor(it)
-                kinesisInboundGateway.register(decorated, recordDeserializer)
-            }
+            .forEach { kinesisInboundGateway.register<Any, Any>(it) }
 
         return bean
     }

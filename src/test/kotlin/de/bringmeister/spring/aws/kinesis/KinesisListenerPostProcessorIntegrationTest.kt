@@ -40,10 +40,10 @@ class KinesisListenerPostProcessorIntegrationTest {
 
     @Test
     fun `should register listeners by default`() {
-        verify(gateway).register(check {
+        verify(gateway).register(check { it: KinesisInboundHandler<*, *> ->
             assertThat(it.stream).isEqualTo("test-stream")
             assertThat((it as KinesisListenerProxy).bean).isSameAs(listener)
-        }, any())
+        })
     }
 }
 

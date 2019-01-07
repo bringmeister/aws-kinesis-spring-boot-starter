@@ -55,7 +55,7 @@ class AwsKinesisAutoConfiguration {
     @ConditionalOnMissingBean
     @ConditionalOnBean(ObjectMapper::class)
     fun recordMapper(objectMapper: ObjectMapper): RecordDeserializerFactory {
-        return KinesisListenerProxyRecordDeserializerFactory(objectMapper)
+        return ObjectMapperRecordDeserializerFactory(objectMapper)
     }
 
     @Bean
@@ -101,9 +101,13 @@ class AwsKinesisAutoConfiguration {
     @ConditionalOnMissingBean
     fun kinesisInboundGateway(
         workerFactory: WorkerFactory,
-        workerStarter: WorkerStarter
+        workerStarter: WorkerStarter,
+        recordDeserializerFactory: RecordDeserializerFactory,
+        @Autowired(required = false) postProcessors: List<KinesisInboundHandlerPostProcessor>?
     ): AwsKinesisInboundGateway {
-        return AwsKinesisInboundGateway(workerFactory, workerStarter)
+        val pp = postProcessors ?: emptyList()
+        log.debug("Registering {} KinesisInboundHandlerPostProcessor: [{}]", pp.size, pp)
+        return AwsKinesisInboundGateway(workerFactory, workerStarter, recordDeserializerFactory, pp)
     }
 
     @Bean
@@ -118,13 +122,9 @@ class AwsKinesisAutoConfiguration {
     @ConditionalOnProperty("aws.kinesis.listener.disabled", havingValue = "false", matchIfMissing = true)
     fun kinesisListenerPostProcessor(
         inboundGateway: AwsKinesisInboundGateway,
-        listenerFactory: KinesisListenerProxyFactory,
-        recordDeserializerFactory: RecordDeserializerFactory,
-        @Autowired(required = false) postProcessors: List<KinesisInboundHandlerPostProcessor>?
+        listenerFactory: KinesisListenerProxyFactory
     ): KinesisListenerPostProcessor {
-        val pp = postProcessors ?: emptyList()
-        log.debug("Registering {} KinesisInboundHandlerPostProcessor: [{}]", pp.size, pp)
-        return KinesisListenerPostProcessor(inboundGateway, listenerFactory, recordDeserializerFactory, pp)
+        return KinesisListenerPostProcessor(inboundGateway, listenerFactory)
     }
 
     @Bean

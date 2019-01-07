@@ -48,8 +48,8 @@ class AwsKinesisRecordProcessorTest {
     val kinesisListener = KinesisListenerProxyFactory(AopProxyUtils()).proxiesFor(handler)[0]
     private val kinesisListenerCapture = KinesisListenerCapture(kinesisListener)
 
-    val recordDeserializer = KinesisListenerProxyRecordDeserializerFactory(mapper)
-        .deserializerFor(kinesisListener)
+    val recordDeserializer = ObjectMapperRecordDeserializerFactory(mapper)
+        .deserializerFor(kinesisListenerCapture)
 
     val recordProcessor =
         AwsKinesisRecordProcessor(recordDeserializer, configuration, kinesisListenerCapture, applicationEventPublisher)
@@ -208,12 +208,12 @@ class AwsKinesisRecordProcessorTest {
 
     private class KinesisListenerCapture(
         private val kinesisListener: KinesisListenerProxy
-    ) : KinesisInboundHandler by kinesisListener {
+    ) : KinesisInboundHandler<Any, Any> by kinesisListener {
 
         private val contexts = mutableListOf<KinesisInboundHandler.ExecutionContext>()
 
         override fun handleRecord(
-            record: de.bringmeister.spring.aws.kinesis.Record<*, *>,
+            record: de.bringmeister.spring.aws.kinesis.Record<Any, Any>,
             context: KinesisInboundHandler.ExecutionContext
         ) {
             contexts.add(context)

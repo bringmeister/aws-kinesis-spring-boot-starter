@@ -1,6 +1,6 @@
 package de.bringmeister.spring.aws.kinesis
 
-interface KinesisInboundHandler {
+interface KinesisInboundHandler<D, M> {
     val stream: String
 
     /** Indicates that the Worker is initialized and ready to send message. */
@@ -12,10 +12,16 @@ interface KinesisInboundHandler {
      * May be retried when an exception is thrown, except when throwing
      * [UnrecoverableException].
      */
-    fun handleRecord(record: Record<*, *>, context: ExecutionContext)
+    fun handleRecord(record: Record<D, M>, context: ExecutionContext)
 
     /** Indicates that the worker is shutting down. */
     fun shutdown() { }
+
+    /** The type of [Record]'s data value */
+    fun dataType(): Class<D>
+
+    /** The type of [Record]'s meta value */
+    fun metaType(): Class<M>
 
     /**
      * Wrapper exception indicating that retrying this handler is unnecessary.

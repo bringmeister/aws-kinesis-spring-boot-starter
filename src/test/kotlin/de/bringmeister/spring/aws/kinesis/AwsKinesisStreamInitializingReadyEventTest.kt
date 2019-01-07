@@ -18,7 +18,7 @@ import java.util.concurrent.CountDownLatch
 @RunWith(SpringRunner::class)
 class AwsKinesisStreamInitializingReadyEventTest {
 
-    val recordDeserializer = mock<RecordDeserializer>()
+    val recordDeserializer = mock<RecordDeserializer<Any, Any>>()
     val configuration = mock<RecordProcessorConfiguration>()
     val handlerMock = mock<(FooCreatedEvent, EventMetadata) -> Unit> { }
     final var handler = object {

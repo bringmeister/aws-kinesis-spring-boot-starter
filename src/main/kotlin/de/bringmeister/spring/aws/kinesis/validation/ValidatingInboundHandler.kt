@@ -6,12 +6,12 @@ import de.bringmeister.spring.aws.kinesis.Record
 import javax.validation.ValidationException
 import javax.validation.Validator
 
-class ValidatingInboundHandler(
-    private val delegate: KinesisInboundHandler,
+class ValidatingInboundHandler<D, M>(
+    private val delegate: KinesisInboundHandler<D, M>,
     private val validator: Validator
-) : KinesisInboundHandler by delegate {
+) : KinesisInboundHandler<D, M> by delegate {
 
-    override fun handleRecord(record: Record<*, *>, context: KinesisInboundHandler.ExecutionContext) {
+    override fun handleRecord(record: Record<D, M>, context: KinesisInboundHandler.ExecutionContext) {
         val violations = validator.validate(record.data)
         if (violations.isNotEmpty()) {
             throw UnrecoverableException(ValidationException("$violations"))

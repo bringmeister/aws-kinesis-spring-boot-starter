@@ -15,10 +15,10 @@ import org.springframework.context.ApplicationEventPublisher
 import com.amazonaws.services.kinesis.model.Record as AwsRecord
 import de.bringmeister.spring.aws.kinesis.Record as BmRecord
 
-class AwsKinesisRecordProcessor(
-    private val recordDeserializer: RecordDeserializer,
+class AwsKinesisRecordProcessor<D, M>(
+    private val recordDeserializer: RecordDeserializer<D, M>,
     private val configuration: RecordProcessorConfiguration,
-    private val handler: KinesisInboundHandler,
+    private val handler: KinesisInboundHandler<D, M>,
     private val publisher: ApplicationEventPublisher
 ) : IRecordProcessor {
 

@@ -10,7 +10,7 @@ class CreateStreamPostProcessor(
     private val streamInitializer: StreamInitializer
 ) : KinesisInboundHandlerPostProcessor, KinesisOutboundStreamPostProcessor {
 
-    override fun postProcess(handler: KinesisInboundHandler): KinesisInboundHandler {
+    override fun <D, M> postProcess(handler: KinesisInboundHandler<D, M>): KinesisInboundHandler<D, M> {
         streamInitializer.createStreamIfMissing(streamName = handler.stream)
         return handler
     }

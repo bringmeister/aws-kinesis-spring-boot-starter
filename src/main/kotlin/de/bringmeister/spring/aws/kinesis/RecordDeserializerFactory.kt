@@ -1,5 +1,5 @@
 package de.bringmeister.spring.aws.kinesis
 
 interface RecordDeserializerFactory {
-    fun deserializerFor(handler: KinesisListenerProxy): RecordDeserializer
+    fun <D, M> deserializerFor(handler: KinesisInboundHandler<D, M>): RecordDeserializer<D, M>
 }

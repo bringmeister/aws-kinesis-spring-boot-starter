@@ -15,7 +15,7 @@ import javax.validation.Validator
 
 class ValidatingInboundHandlerTest {
 
-    private val mockDelegate = mock<KinesisInboundHandler> { }
+    private val mockDelegate = mock<KinesisInboundHandler<Any, Any>> { }
     private val mockValidator = mock<Validator> { }
     private val handler = ValidatingInboundHandler(mockDelegate, mockValidator)
 

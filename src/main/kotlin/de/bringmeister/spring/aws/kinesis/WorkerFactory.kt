@@ -11,7 +11,7 @@ class WorkerFactory(
     private val applicationEventPublisher: ApplicationEventPublisher
 ) {
 
-    fun worker(handler: KinesisInboundHandler, recordDeserializer: RecordDeserializer): Worker {
+    fun <D, M> worker(handler: KinesisInboundHandler<D, M>, recordDeserializer: RecordDeserializer<D, M>): Worker {
 
         val processorFactory: () -> (IRecordProcessor) = {
             val configuration =

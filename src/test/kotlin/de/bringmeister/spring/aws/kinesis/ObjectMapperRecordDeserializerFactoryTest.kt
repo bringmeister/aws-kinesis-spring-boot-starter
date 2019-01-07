@@ -7,7 +7,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import java.nio.ByteBuffer
 
-class KinesisListenerProxyRecordDeserializerFactoryTest {
+class ObjectMapperRecordDeserializerFactoryTest {
 
     val messageJson = """{"data":{"foo":"any-field"},"metadata":{"sender":"test"}}"""
     val mapper = ObjectMapper().registerModule(KotlinModule())
@@ -23,7 +23,7 @@ class KinesisListenerProxyRecordDeserializerFactoryTest {
 
         val kinesisListenerProxy = KinesisListenerProxyFactory(AopProxyUtils()).proxiesFor(handler)[0]
 
-        val deserializer = KinesisListenerProxyRecordDeserializerFactory(mapper)
+        val deserializer = ObjectMapperRecordDeserializerFactory(mapper)
             .deserializerFor(kinesisListenerProxy)
         val awsRecord = Record()
             .withData(ByteBuffer.wrap(messageJson.toByteArray(Charsets.UTF_8)))
