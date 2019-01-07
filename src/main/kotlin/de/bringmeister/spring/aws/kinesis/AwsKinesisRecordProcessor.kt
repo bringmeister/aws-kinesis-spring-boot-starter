@@ -46,7 +46,7 @@ class AwsKinesisRecordProcessor<D, M>(
         val maxAttempts = 1 + configuration.maxRetries
         try {
             val record = recordDeserializer.deserialize(awsRecord)
-            var context = AwsExecutonContext()
+            var context = AwsExecutionContext()
 
             for (attempt in 1..maxAttempts) {
                 try {
@@ -124,12 +124,12 @@ class AwsKinesisRecordProcessor<D, M>(
         }
     }
 
-    private data class AwsExecutonContext(
+    private data class AwsExecutionContext(
         private val retryAttempt: Int = 0
     ) : KinesisInboundHandler.ExecutionContext {
 
         override val isRetry get() = retryAttempt > 0
 
-        fun withRetryAttempt(retryAttempt: Int) = AwsExecutonContext(retryAttempt)
+        fun withRetryAttempt(retryAttempt: Int) = AwsExecutionContext(retryAttempt)
     }
 }
