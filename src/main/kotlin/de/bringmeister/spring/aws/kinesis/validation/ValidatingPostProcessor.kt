@@ -10,7 +10,7 @@ class ValidatingPostProcessor(
     private val validator: Validator
 ) : KinesisInboundHandlerPostProcessor, KinesisOutboundStreamPostProcessor {
 
-    override fun <D, M> postProcess(handler: KinesisInboundHandler<D, M>) =
+    override fun postProcess(handler: KinesisInboundHandler<*, *>) =
         ValidatingInboundHandler(handler, validator)
 
     override fun postProcess(stream: KinesisOutboundStream) =

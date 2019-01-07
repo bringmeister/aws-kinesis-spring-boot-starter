@@ -59,7 +59,6 @@ class AwsKinesisInboundGatewayTest {
     private class TestPostProcessor(
         private val decorated: KinesisInboundHandler<*, *>
     ): KinesisInboundHandlerPostProcessor {
-        override fun <D, M> postProcess(handler: KinesisInboundHandler<D, M>) = decorated as KinesisInboundHandler<D, M>
+        override fun postProcess(handler: KinesisInboundHandler<*, *>) = decorated
     }
-
 }

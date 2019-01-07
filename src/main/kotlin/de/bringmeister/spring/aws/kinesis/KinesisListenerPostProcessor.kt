@@ -13,7 +13,7 @@ class KinesisListenerPostProcessor(
 
         kinesisListenerProxyFactory
             .proxiesFor(bean)
-            .forEach { kinesisInboundGateway.register<Any, Any>(it) }
+            .forEach(kinesisInboundGateway::register)
 
         return bean
     }
