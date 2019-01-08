@@ -20,7 +20,7 @@ You will find examples for both languages below.
 ## Installation
 
 Add the following dependency to your project:
-```
+```groovy
 repositories {
     ...
     maven { url 'https://jitpack.io' }
@@ -36,7 +36,7 @@ In order to use this library you need to configure some properties in your `appl
 The following shows the minimal required configuration.
 This configuration will allow you to send and receive messages.
 
-```
+```yaml
 aws:
   kinesis:
     region: eu-central-1
@@ -56,7 +56,7 @@ Run `docker-compose up` in order to start Kinesis (and DynamoDB).
 
 The configuration for local development looks like this:
 
-```
+```yaml
 aws:
   kinesis:
     region: local
@@ -72,7 +72,7 @@ Any stream used in your application will be created (as soon as it is used first
 
 Also, you must enable a Spring profile (`kinesis-local`):
 
-```
+```yaml
 spring:
   profiles:
     include: kinesis-local
@@ -85,15 +85,28 @@ Both tests will use the same Docker images in order to send and receive messages
 
 You can create streams automatically by turning the `create-streams` flag on:
 
-```
+```yaml
 aws:
   kinesis:
     ...
     create-streams: true
 ```
 
-By default, `create-streams` will be turned-off. 
-So if you don't specify anything, no streams will be created.
+By default, `create-streams` is turned off and streams *must* be created externally.
+
+#### Validate data send and received
+
+By default, this starter validates all data send and received automatically if a bean of type `javax.validation.Validator` is found.
+This feature can be disable by setting `validate` flag to `false`:
+
+```yaml
+aws:
+  kinesis:
+    ...
+    validate: false
+```
+
+By default, `validate` is turned on.
 
 #### Configuring initial position in stream
 
@@ -101,7 +114,7 @@ You can use one of following values:
 * `LATEST`: Start after the most recent data record (fetch new data).
 * `TRIM_HORIZON`: Start from the oldest available data record.
 
-```
+```yaml
 aws:
   kinesis:
     ...
@@ -112,9 +125,9 @@ If you don't specify anything, by default, `LATEST` value will be used.
 
 #### Configuring listeners
 
-You can configure listeners in order to use a dedicated role and account for a stream.
+You can configure listeners to use a dedicated role and account for a stream.
 
-```
+```yaml
 aws:
   kinesis:
     ...
@@ -127,7 +140,7 @@ aws:
 By default, events won't be retried. When the processing of an event fails (can't be deserialized for example), it will 
 be skipped and the next event will be processed. Retrying of events can be activated in the configuration like this:
 
-```
+```yaml
 aws:
   kinesis:
     ...
@@ -141,7 +154,7 @@ aws:
 
 You can configure producers in order to use a dedicated role and account for a stream.
 
-```
+```yaml
 aws:
   kinesis:
     ...
@@ -205,7 +218,7 @@ See `KotlinListenerTest.kt` for an example.
 
 The event will be marshalled as JSON using Jackson and send to the Kinesis stream using the credentials defined in the `application.yml`.
 
-````
+````json
 {
     "data":"my content",
     "metadata":"my metadata"

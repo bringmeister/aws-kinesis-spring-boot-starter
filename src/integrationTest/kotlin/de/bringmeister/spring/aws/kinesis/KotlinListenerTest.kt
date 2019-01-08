@@ -15,6 +15,8 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import de.bringmeister.spring.aws.kinesis.creation.KinesisCreateStreamAutoConfiguration
+import de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfiguration
 
 @ActiveProfiles("kinesis-local")
 @SpringBootTest(
@@ -23,7 +25,9 @@ import java.util.concurrent.TimeUnit
         JacksonConfiguration::class,
         JacksonAutoConfiguration::class,
         KinesisLocalConfiguration::class,
-        AwsKinesisAutoConfiguration::class
+        AwsKinesisAutoConfiguration::class,
+        KinesisCreateStreamAutoConfiguration::class,
+        KinesisValidationAutoConfiguration::class
     ],
     properties = [
         "aws.kinesis.initial-position-in-stream: TRIM_HORIZON"

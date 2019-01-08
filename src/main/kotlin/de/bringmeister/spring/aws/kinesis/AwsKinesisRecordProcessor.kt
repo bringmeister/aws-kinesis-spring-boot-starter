@@ -10,53 +10,53 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.ShutdownReason
 import com.amazonaws.services.kinesis.clientlibrary.types.InitializationInput
 import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput
-import com.amazonaws.services.kinesis.model.Record
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
-import java.nio.charset.Charset
-import javax.validation.ValidationException
-import javax.validation.Validator
+import com.amazonaws.services.kinesis.model.Record as AwsRecord
+import de.bringmeister.spring.aws.kinesis.Record as BmRecord
 
-class AwsKinesisRecordProcessor(
-    private val recordMapper: RecordMapper,
+class AwsKinesisRecordProcessor<D, M>(
+    private val recordDeserializer: RecordDeserializer<D, M>,
     private val configuration: RecordProcessorConfiguration,
-    private val handler: KinesisListenerProxy,
-    private val publisher: ApplicationEventPublisher,
-    private val validator: Validator? = null
+    private val handler: KinesisInboundHandler<D, M>,
+    private val publisher: ApplicationEventPublisher
 ) : IRecordProcessor {
 
     private val log = LoggerFactory.getLogger(javaClass.name)
 
-    override fun initialize(initializationInput: InitializationInput?) {
-        val workerInitializedEvent = WorkerInitializedEvent(handler.stream, initializationInput!!.shardId)
+    override fun initialize(initializationInput: InitializationInput) {
+        val workerInitializedEvent = WorkerInitializedEvent(handler.stream, initializationInput.shardId)
         publisher.publishEvent(workerInitializedEvent)
         log.info("Kinesis listener initialized: [stream={}, shardId={}]", handler.stream, initializationInput.shardId)
     }
 
-    override fun processRecords(processRecordsInput: ProcessRecordsInput?) {
-        processRecordsWithRetries(processRecordsInput!!.records)
+    override fun processRecords(processRecordsInput: ProcessRecordsInput) {
+        processRecordsWithRetries(processRecordsInput.records)
         checkpoint(processRecordsInput.checkpointer)
     }
 
-    private fun processRecordsWithRetries(awsRecords: List<Record>) {
+    private fun processRecordsWithRetries(awsRecords: List<AwsRecord>) {
         log.trace("Received [{}] records on stream [{}]", awsRecords.size, handler.stream)
         awsRecords.forEach(this::processRecordWithRetries)
     }
 
-    private fun processRecordWithRetries(awsRecord: Record) {
-        val recordJson = Charset.forName("UTF-8")
-            .decode(awsRecord.data)
-            .toString()
+    private fun processRecordWithRetries(awsRecord: AwsRecord) {
+        log.trace("Stream [{}], Seq. No [{}]", handler.stream, awsRecord.sequenceNumber)
 
         val maxAttempts = 1 + configuration.maxRetries
         try {
-            log.trace("Stream [{}], Seq. No [{}]: {}", handler.stream, awsRecord.sequenceNumber, recordJson)
-
-            val record = getRecordFromJson(recordJson)
+            val record = recordDeserializer.deserialize(awsRecord)
+            var context = AwsExecutionContext()
 
             for (attempt in 1..maxAttempts) {
                 try {
-                    handler.invoke(record.data, record.metadata)
+                    handler.handleRecord(record, context)
+                    return
+                } catch (e: KinesisInboundHandler.UnrecoverableException) {
+                    log.error(
+                        "Unrecoverable exception while processing record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
+                        e.cause
+                    )
                     return
                 } catch (e: Exception) {
                     log.error(
@@ -66,6 +66,7 @@ class AwsKinesisRecordProcessor(
                 }
 
                 backoff()
+                context = context.withRetryAttempt(attempt)
             }
         } catch (transformationException: Exception) {
             log.error(
@@ -75,16 +76,6 @@ class AwsKinesisRecordProcessor(
         }
 
         log.warn("Processing of record failed. Skipping it. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}, attempts=$maxAttempts")
-    }
-
-    private fun getRecordFromJson(recordData: String): de.bringmeister.spring.aws.kinesis.Record<*, *> {
-        val record = recordMapper.deserializeFor(recordData, handler)
-        val violations = validator?.validate(record) ?: setOf()
-        if (violations.isNotEmpty()) {
-            throw ValidationException("$violations")
-        }
-
-        return record
     }
 
     private fun checkpoint(checkpointer: IRecordProcessorCheckpointer) {
@@ -125,11 +116,20 @@ class AwsKinesisRecordProcessor(
         }
     }
 
-    override fun shutdown(shutdownInput: ShutdownInput?) {
+    override fun shutdown(shutdownInput: ShutdownInput) {
         log.info("Shutting down record processor")
         // Important to checkpoint after reaching end of shard, so we can start processing data from child shards.
-        if (shutdownInput?.shutdownReason == ShutdownReason.TERMINATE) {
+        if (shutdownInput.shutdownReason == ShutdownReason.TERMINATE) {
             checkpoint(shutdownInput.checkpointer)
         }
+    }
+
+    private data class AwsExecutionContext(
+        private val retryAttempt: Int = 0
+    ) : KinesisInboundHandler.ExecutionContext {
+
+        override val isRetry get() = retryAttempt > 0
+
+        fun withRetryAttempt(retryAttempt: Int) = AwsExecutionContext(retryAttempt)
     }
 }

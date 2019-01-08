@@ -16,9 +16,7 @@ class StreamInitializer(
     private val activeStreams = mutableListOf<String>()
 
     fun createStreamIfMissing(streamName: String, shardCount: Int = 1) {
-        // TODO I feel like the method name <createStreamIfMissing> implies that
-        //      the setting was already checked.
-        if (kinesisSettings.createStreams && !activeStreams.contains(streamName)) {
+        if (!activeStreams.contains(streamName)) {
             try {
                 val response = kinesis.describeStream(streamName)
                 if (!streamIsActive(response)) {

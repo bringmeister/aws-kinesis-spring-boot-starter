@@ -13,15 +13,13 @@ import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import org.springframework.test.context.junit4.SpringRunner
 import java.util.concurrent.CountDownLatch
-import javax.validation.Validator
 
 @SpringBootTest(classes = [WorkerInitializedListener::class])
 @RunWith(SpringRunner::class)
 class AwsKinesisStreamInitializingReadyEventTest {
 
-    val recordMapper = mock<ReflectionBasedRecordMapper>()
+    val recordDeserializer = mock<RecordDeserializer<Any, Any>>()
     val configuration = mock<RecordProcessorConfiguration>()
-    val validator = mock<Validator>()
     val handlerMock = mock<(FooCreatedEvent, EventMetadata) -> Unit> { }
     final var handler = object {
         @KinesisListener(stream = "foo-event-stream")
@@ -44,7 +42,7 @@ class AwsKinesisStreamInitializingReadyEventTest {
 
     @Test
     fun `should publish initializing ready event`() {
-        AwsKinesisRecordProcessor(recordMapper, configuration, kinesisListener, publisher, validator)
+        AwsKinesisRecordProcessor(recordDeserializer, configuration, kinesisListener, publisher)
             .initialize(initializationInput)
         countDownLatch.await()
 

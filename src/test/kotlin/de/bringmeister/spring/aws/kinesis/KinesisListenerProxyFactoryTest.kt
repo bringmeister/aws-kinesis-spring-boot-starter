@@ -15,7 +15,7 @@ class KinesisListenerProxyFactoryTest {
     }
 
     @Test
-    fun `should return list no Kinesis listeners`() {
+    fun `should return handlers for annotated methods`() {
         val dummyListener = DummyListener()
         val kinesisListenerProxies = kinesisListenerProxyFactory.proxiesFor(dummyListener)
 
