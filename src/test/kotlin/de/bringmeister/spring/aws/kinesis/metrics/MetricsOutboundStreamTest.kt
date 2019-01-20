@@ -33,7 +33,7 @@ class MetricsOutboundStreamTest {
         handler.send(record)
 
         assertThat(registry.meters.map { it.id })
-            .anyMatch { it.name == "aws.kinesis.starter.outbound.time" && tags == Tags.of(it.tags) }
+            .anyMatch { it.name == "aws.kinesis.starter.outbound" && tags == Tags.of(it.tags) }
     }
 
     @Test
@@ -45,7 +45,7 @@ class MetricsOutboundStreamTest {
         handler.send(record)
 
         assertThat(registry.meters.map { it.id })
-            .anyMatch { it.name == "aws.kinesis.starter.outbound.count" && tags == Tags.of(it.tags) }
+            .anyMatch { it.name == "aws.kinesis.starter.outbound" && tags == Tags.of(it.tags) }
     }
 
     @Test
@@ -59,7 +59,7 @@ class MetricsOutboundStreamTest {
             .isSameAs(MyException)
 
         assertThat(registry.meters.map { it.id })
-            .anyMatch { it.name == "aws.kinesis.starter.outbound.count" && tags == Tags.of(it.tags) }
+            .anyMatch { it.name == "aws.kinesis.starter.outbound" && tags == Tags.of(it.tags) }
     }
 
     @Test

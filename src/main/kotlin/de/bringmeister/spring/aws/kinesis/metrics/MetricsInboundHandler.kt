@@ -3,6 +3,8 @@ package de.bringmeister.spring.aws.kinesis.metrics
 import de.bringmeister.spring.aws.kinesis.KinesisInboundHandler
 import de.bringmeister.spring.aws.kinesis.Record
 import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Timer
+import java.time.Duration
 
 class MetricsInboundHandler<D, M>(
     private val delegate: KinesisInboundHandler<D, M>,
@@ -11,41 +13,28 @@ class MetricsInboundHandler<D, M>(
 ) : KinesisInboundHandler<D, M> by delegate {
 
     companion object {
-        private const val metricNameTime = "aws.kinesis.starter.inbound.time"
-        private const val metricNameCount = "aws.kinesis.starter.inbound.count"
+        private const val metricName = "aws.kinesis.starter.inbound"
     }
 
     override fun handleRecord(record: Record<D, M>, context: KinesisInboundHandler.ExecutionContext) {
+        val sample = Timer.start(registry)
         try {
-            timedHandleRecord(record, context)
-            success(record, context)
+            delegate.handleRecord(record, context)
+            record(sample, record, context, null)
         } catch (ex: Throwable) {
-            error(record, context, ex)
+            record(sample, record, context, ex)
             throw ex
         }
     }
 
     override fun handleDeserializationError(cause: Exception, context: KinesisInboundHandler.ExecutionContext) {
-        error(null, context, cause)
+        val tags = tagsProvider.inboundTags(stream, null, context, cause)
+        registry.timer(metricName, tags).record(Duration.ZERO)
         delegate.handleDeserializationError(cause, context)
     }
 
-
-    private fun timedHandleRecord(record: Record<D, M>, context: KinesisInboundHandler.ExecutionContext) {
-        val tags = tagsProvider.inboundTags(stream, record, context, null)
-        registry.timer(metricNameTime, tags)
-            .record { delegate.handleRecord(record, context) }
-    }
-
-    private fun success(record: Record<*, *>, context: KinesisInboundHandler.ExecutionContext) {
-        val tags = tagsProvider.inboundTags(stream, record, context, null)
-        registry.counter(metricNameCount, tags)
-            .increment()
-    }
-
-    private fun error(record: Record<*, *>?, context: KinesisInboundHandler.ExecutionContext, cause: Throwable) {
+    private fun record(sample: Timer.Sample, record: Record<D, M>?, context: KinesisInboundHandler.ExecutionContext, cause: Throwable?) {
         val tags = tagsProvider.inboundTags(stream, record, context, cause)
-        registry.counter(metricNameCount, tags)
-            .increment()
+        sample.stop(registry.timer(metricName, tags))
     }
 }

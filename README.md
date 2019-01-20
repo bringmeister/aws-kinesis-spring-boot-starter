@@ -121,10 +121,8 @@ aws:
 ```
 
 The following metrics are recorded and tagged with `stream` and `exception` (default `None`):
-* `aws.kinesis.starter.inbound.time`: Duration of calls to `KinesisInboundHandler.handleRecord` (+ tag `retry`)
-* `aws.kinesis.starter.inbound.count`: Count of calls to `KinesisInboundHandler.handleRecord` (+ tag `retry`)
-* `aws.kinesis.starter.outbound.time`: Duration of calls to `KinesisOutboundStream.send`
-* `aws.kinesis.starter.outbound.count`: Count of calls to `KinesisOutboundStream.send`
+* `aws.kinesis.starter.inbound`: Duration of calls to `KinesisInboundHandler.handleRecord` (+ tag `retry`)
+* `aws.kinesis.starter.outbound`: Duration of calls to `KinesisOutboundStream.send`
 
 By default, `metrics` is turned on.
 

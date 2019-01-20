@@ -35,7 +35,7 @@ class MetricsInboundHandlerTest {
         handler.handleRecord(record, context)
 
         assertThat(registry.meters.map { it.id })
-            .anyMatch { it.name == "aws.kinesis.starter.inbound.time" && tags == Tags.of(it.tags) }
+            .anyMatch { it.name == "aws.kinesis.starter.inbound" && tags == Tags.of(it.tags) }
     }
 
     @Test
@@ -47,7 +47,7 @@ class MetricsInboundHandlerTest {
         handler.handleRecord(record, context)
 
         assertThat(registry.meters.map { it.id })
-            .anyMatch { it.name == "aws.kinesis.starter.inbound.count" && tags == Tags.of(it.tags) }
+            .anyMatch { it.name == "aws.kinesis.starter.inbound" && tags == Tags.of(it.tags) }
     }
 
     @Test
@@ -61,7 +61,7 @@ class MetricsInboundHandlerTest {
             .isSameAs(MyException)
 
         assertThat(registry.meters.map { it.id })
-            .anyMatch { it.name == "aws.kinesis.starter.inbound.count" && tags == Tags.of(it.tags) }
+            .anyMatch { it.name == "aws.kinesis.starter.inbound" && tags == Tags.of(it.tags) }
     }
 
     @Test
@@ -76,7 +76,7 @@ class MetricsInboundHandlerTest {
             .isSameAs(delegateException)
 
         assertThat(registry.meters.map { it.id })
-            .anyMatch { it.name == "aws.kinesis.starter.inbound.count" && tags == Tags.of(it.tags) }
+            .anyMatch { it.name == "aws.kinesis.starter.inbound" && tags == Tags.of(it.tags) }
     }
 
     @Test
