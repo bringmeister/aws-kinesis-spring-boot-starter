@@ -108,6 +108,24 @@ aws:
 
 By default, `validate` is turned on.
 
+#### Metrics
+
+This starter reports metrics about records send and received when `io.micrometer:micrometer-core` is found on classpath.
+This feature can be disable by setting `metrics` flag to `false`:
+
+```yaml
+aws:
+  kinesis:
+    ...
+    metrics: false
+```
+
+The following metrics are recorded and tagged with `stream` and `exception` (default `None`):
+* `aws.kinesis.starter.inbound`: Duration of calls to `KinesisInboundHandler.handleRecord` (+ tag `retry`)
+* `aws.kinesis.starter.outbound`: Duration of calls to `KinesisOutboundStream.send`
+
+By default, `metrics` is turned on.
+
 #### Configuring initial position in stream
 
 You can use one of following values:

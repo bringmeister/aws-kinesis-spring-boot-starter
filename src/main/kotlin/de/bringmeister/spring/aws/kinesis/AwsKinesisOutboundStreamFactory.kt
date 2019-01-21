@@ -1,12 +1,15 @@
 package de.bringmeister.spring.aws.kinesis
 
+import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 
 class AwsKinesisOutboundStreamFactory(
     private val clientProvider: KinesisClientProvider,
     private val requestFactory: RequestFactory,
-    private val postProcessors: List<KinesisOutboundStreamPostProcessor> = emptyList()
+    private val postProcessors: Iterable<KinesisOutboundStreamPostProcessor> = emptyList()
 ) : KinesisOutboundStreamFactory {
+
+    private val log = LoggerFactory.getLogger(javaClass)
 
     private val streams = ConcurrentHashMap<String, KinesisOutboundStream>()
 
@@ -15,8 +18,9 @@ class AwsKinesisOutboundStreamFactory(
     }
 
     private fun createStream(streamName: String): KinesisOutboundStream {
-        val initial = AwsKinesisOutboundStream(streamName, requestFactory, clientProvider)
-        return postProcessors.fold(initial) { stream: KinesisOutboundStream, postProcessor ->
+        val initial: KinesisOutboundStream = AwsKinesisOutboundStream(streamName, requestFactory, clientProvider)
+        return postProcessors.fold(initial) { stream, postProcessor ->
+            log.debug("Applying post processor <{}> on outbound stream <{}>", postProcessor, stream)
             postProcessor.postProcess(stream)
         }
     }

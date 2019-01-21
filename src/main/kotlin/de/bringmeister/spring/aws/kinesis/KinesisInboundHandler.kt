@@ -1,5 +1,8 @@
 package de.bringmeister.spring.aws.kinesis
 
+/**
+ * @see KinesisInboundHandlerPostProcessor
+ */
 interface KinesisInboundHandler<D, M> {
     val stream: String
 
@@ -13,6 +16,12 @@ interface KinesisInboundHandler<D, M> {
      * [UnrecoverableException].
      */
     fun handleRecord(record: Record<D, M>, context: ExecutionContext)
+
+    /**
+     * Called instead of [handleRecord] when deserializing an AWS record into
+     * [Record] failed.
+     */
+    fun handleDeserializationError(cause: Exception, context: ExecutionContext) { }
 
     /** Indicates that the worker is shutting down. */
     fun shutdown() { }
@@ -36,6 +45,7 @@ interface KinesisInboundHandler<D, M> {
         }
     }
 
+    /** Per-execution metadata */
     interface ExecutionContext {
         val isRetry: Boolean
     }
