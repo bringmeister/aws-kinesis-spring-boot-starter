@@ -1,6 +1,5 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.check
 import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
 import org.assertj.core.api.Assertions.assertThat
@@ -17,7 +16,8 @@ import org.springframework.test.context.junit4.SpringRunner
 @Component
 private class MyListener {
     @KinesisListener("test-stream")
-    fun handle(data: String, metadata: String) { }
+    fun handle(data: String, metadata: String) {
+    }
 }
 
 @ActiveProfiles("test")

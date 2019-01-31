@@ -13,7 +13,7 @@ class AwsKinesisOutboundGateway(
         requestFactory: RequestFactory,
         streamInitializer: StreamInitializer? = null,
         validator: Validator? = null
-    ): this(
+    ) : this(
         AwsKinesisOutboundStreamFactory(
             clientProvider,
             requestFactory,

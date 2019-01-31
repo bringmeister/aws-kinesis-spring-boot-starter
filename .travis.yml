@@ -8,7 +8,7 @@ before_install:
   - chmod +x gradle/wrapper/gradle-wrapper.jar
 
 script:
-  - ./gradlew clean integrationTest build -i --stacktrace
+  - ./gradlew clean build -i --stacktrace
 
 after_success:
   - ./gradlew jacocoTestReport coveralls

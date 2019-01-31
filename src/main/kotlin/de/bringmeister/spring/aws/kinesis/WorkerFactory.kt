@@ -31,7 +31,8 @@ class WorkerFactory(
                     WorkerStateChangeListener.WorkerState.SHUT_DOWN -> {
                         handler.shutdown()
                     }
-                    else -> { }
+                    else -> {
+                    }
                 }
             }
             .config(config)

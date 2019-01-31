@@ -25,9 +25,9 @@ class ValidatingInboundHandlerTest {
     @Test
     fun `should not invoke delegate on invalid record`() {
         assertThatCode {
-                whenever(mockValidator.validate(anyVararg<Any>())).thenReturn(setOf(mock()))
-                handler.handleRecord(record, context)
-            }
+            whenever(mockValidator.validate(anyVararg<Any>())).thenReturn(setOf(mock()))
+            handler.handleRecord(record, context)
+        }
             .hasCauseInstanceOf(ValidationException::class.java)
             .isInstanceOf(KinesisInboundHandler.UnrecoverableException::class.java)
         verifyZeroInteractions(mockDelegate)

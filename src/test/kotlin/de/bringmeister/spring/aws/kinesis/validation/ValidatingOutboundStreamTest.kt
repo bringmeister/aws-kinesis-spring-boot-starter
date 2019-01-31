@@ -26,10 +26,9 @@ class ValidatingOutboundStreamTest {
     @Test
     fun `should not invoke delegate on invalid record`() {
         assertThatCode {
-                whenever(mockValidator.validate(anyVararg<Any>())).thenReturn(setOf(mock()))
-                handler.send(record)
-            }
-            .isInstanceOf(ValidationException::class.java)
+            whenever(mockValidator.validate(anyVararg<Any>())).thenReturn(setOf(mock()))
+            handler.send(record)
+        }.isInstanceOf(ValidationException::class.java)
         verifyZeroInteractions(mockDelegate)
     }
 

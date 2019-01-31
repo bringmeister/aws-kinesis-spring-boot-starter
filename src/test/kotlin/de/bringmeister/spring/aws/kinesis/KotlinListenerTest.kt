@@ -3,6 +3,9 @@ package de.bringmeister.spring.aws.kinesis
 import com.github.dockerjava.api.model.ExposedPort
 import com.github.dockerjava.api.model.PortBinding
 import com.github.dockerjava.api.model.Ports
+import de.bringmeister.spring.aws.kinesis.creation.KinesisCreateStreamAutoConfiguration
+import de.bringmeister.spring.aws.kinesis.metrics.KinesisMetricsAutoConfiguration
+import de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfiguration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.ClassRule
 import org.junit.Test
@@ -15,11 +18,8 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import de.bringmeister.spring.aws.kinesis.creation.KinesisCreateStreamAutoConfiguration
-import de.bringmeister.spring.aws.kinesis.metrics.KinesisMetricsAutoConfiguration
-import de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfiguration
 
-@ActiveProfiles("kinesis-local")
+@ActiveProfiles("test")
 @SpringBootTest(
     classes = [
         KotlinTestListener::class,
@@ -49,15 +49,33 @@ class KotlinListenerTest {
 
         @ClassRule
         @JvmField
-        val kinesis = KGenericContainer("instructure/kinesalite:latest").withCreateContainerCmdModifier({
-            it.withPortBindings(Ports(PortBinding(Ports.Binding("localhost", "14567"), ExposedPort.tcp(4567))))
-        })
+        val kinesis =
+            KGenericContainer("instructure/kinesalite:latest")
+                .withCreateContainerCmdModifier {
+                    it.withPortBindings(
+                        Ports(
+                            PortBinding(
+                                Ports.Binding("localhost", "14567"),
+                                ExposedPort.tcp(4567)
+                            )
+                        )
+                    )
+                }
 
         @ClassRule
         @JvmField
-        val dynamodb = KGenericContainer("richnorth/dynalite:latest").withCreateContainerCmdModifier({
-            it.withPortBindings(Ports(PortBinding(Ports.Binding("localhost", "14568"), ExposedPort.tcp(4567))))
-        })
+        val dynamodb =
+            KGenericContainer("richnorth/dynalite:latest")
+                .withCreateContainerCmdModifier {
+                    it.withPortBindings(
+                        Ports(
+                            PortBinding(
+                                Ports.Binding("localhost", "1456"),
+                                ExposedPort.tcp(4567)
+                            )
+                        )
+                    )
+                }
     }
 
     @Test
@@ -68,7 +86,7 @@ class KotlinListenerTest {
 
         outbound.send("foo-event-stream", Record(fooEvent, metadata))
 
-        val messageReceived = latch.await(1, TimeUnit.MINUTES) // wait for event-listener thread to process event
+        val messageReceived = latch.await(1, TimeUnit.MINUTES)
 
         assertThat(messageReceived).isTrue()
     }

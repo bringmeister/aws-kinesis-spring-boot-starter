@@ -34,7 +34,7 @@ class AwsKinesisRecordProcessorTest {
     val configuration = RecordProcessorConfiguration(2, 1)
     var handlerMock = mock<(FooCreatedEvent, EventMetadata) -> Unit> { }
     var applicationEventPublisher = mock<ApplicationEventPublisher> {
-        on { publishEvent(any()) }.then {  }
+        on { publishEvent(any()) }.then { }
     }
 
     var handler = object {

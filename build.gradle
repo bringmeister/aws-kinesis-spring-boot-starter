@@ -3,7 +3,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 buildscript {
     ext {
         versions = [
-                kotlin    : '1.3.0',
+                kotlin    : '1.3.20',
                 kinesis   : '1.9.3',
                 awsSdk    : '1.11.438'
         ]
@@ -50,7 +50,6 @@ apply plugin: "jacoco"
 apply plugin: "com.github.kt3k.coveralls"
 apply plugin: "io.spring.dependency-management"
 
-apply from: "build-scripts/integration-tests.gradle"
 group = 'de.bringmeister'
 sourceCompatibility = 1.8
 

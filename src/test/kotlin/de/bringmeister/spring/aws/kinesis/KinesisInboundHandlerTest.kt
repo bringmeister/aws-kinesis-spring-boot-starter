@@ -10,7 +10,7 @@ class KinesisInboundHandlerTest {
     private val handler = object : KinesisInboundHandler<Any, Any> {
 
         override val stream get() = "test"
-        override fun handleRecord(record: Record<Any, Any>, context: KinesisInboundHandler.ExecutionContext) { }
+        override fun handleRecord(record: Record<Any, Any>, context: KinesisInboundHandler.ExecutionContext) {}
 
         override fun dataType() = Any::class.java
         override fun metaType() = Any::class.java
@@ -50,8 +50,8 @@ class KinesisInboundHandlerTest {
 
         val ret = Any()
         assertThatCode {
-                assertThat(UnrecoverableException.unrecoverable { ret }).isSameAs(ret)
-            }
+            assertThat(UnrecoverableException.unrecoverable { ret }).isSameAs(ret)
+        }
             .doesNotThrowAnyException()
     }
 

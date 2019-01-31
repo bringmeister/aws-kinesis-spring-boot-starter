@@ -7,7 +7,7 @@ interface KinesisInboundHandler<D, M> {
     val stream: String
 
     /** Indicates that the Worker is initialized and ready to send message. */
-    fun ready() { }
+    fun ready() {}
 
     /**
      * Called for each message.
@@ -21,10 +21,10 @@ interface KinesisInboundHandler<D, M> {
      * Called instead of [handleRecord] when deserializing an AWS record into
      * [Record] failed.
      */
-    fun handleDeserializationError(cause: Exception, context: ExecutionContext) { }
+    fun handleDeserializationError(cause: Exception, context: ExecutionContext) {}
 
     /** Indicates that the worker is shutting down. */
-    fun shutdown() { }
+    fun shutdown() {}
 
     /** The type of [Record]'s data value */
     fun dataType(): Class<D>
@@ -39,9 +39,12 @@ interface KinesisInboundHandler<D, M> {
      */
     class UnrecoverableException(ex: Exception) : RuntimeException(ex) {
         companion object {
-            inline fun <reified T: Any?> unrecoverable(runnable: () -> T) =
-                try { runnable() }
-                catch (ex: Exception) { throw KinesisInboundHandler.UnrecoverableException(ex) }
+            inline fun <reified T : Any?> unrecoverable(runnable: () -> T) =
+                try {
+                    runnable()
+                } catch (ex: Exception) {
+                    throw KinesisInboundHandler.UnrecoverableException(ex)
+                }
         }
     }
 

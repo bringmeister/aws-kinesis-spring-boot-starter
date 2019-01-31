@@ -7,7 +7,7 @@ data class KinesisListenerProxy(
     val method: Method,
     val bean: Any,
     override val stream: String
-): KinesisInboundHandler<Any, Any> {
+) : KinesisInboundHandler<Any, Any> {
 
     private val dataClass: Class<Any>
     private val metaClass: Class<Any>

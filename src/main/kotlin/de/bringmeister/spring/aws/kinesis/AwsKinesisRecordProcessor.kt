@@ -54,13 +54,15 @@ class AwsKinesisRecordProcessor<D, M>(
                     return
                 } catch (e: KinesisInboundHandler.UnrecoverableException) {
                     log.error(
-                        "Unrecoverable exception while processing record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
+                        "Unrecoverable exception while processing record. " +
+                            "[sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
                         e.cause
                     )
                     return
                 } catch (e: Exception) {
                     log.error(
-                        "Exception while processing record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
+                        "Exception while processing record. " +
+                            "[sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
                         e
                     )
                 }
@@ -70,18 +72,25 @@ class AwsKinesisRecordProcessor<D, M>(
             }
         } catch (transformationException: Exception) {
             log.error(
-                "Exception while transforming record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
+                "Exception while transforming record. " +
+                    "[sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
                 transformationException
             )
-            try { handler.handleDeserializationError(transformationException, context) }
-            catch (ex: Throwable) {
+            try {
+                handler.handleDeserializationError(transformationException, context)
+            } catch (ex: Throwable) {
                 log.error(
-                    "Error occurred in handler during call to handleDeserializationError for stream <{}> [sequenceNumber={}, partitionKey={}]",
-                    handler.stream, awsRecord.sequenceNumber, awsRecord.partitionKey, ex)
+                    "Error occurred in handler during call to handleDeserializationError for stream <{}> " +
+                        "[sequenceNumber={}, partitionKey={}]",
+                    handler.stream, awsRecord.sequenceNumber, awsRecord.partitionKey, ex
+                )
             }
         }
 
-        log.warn("Processing of record failed. Skipping it. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}, attempts=$maxAttempts")
+        log.warn(
+            "Processing of record failed. Skipping it. [sequenceNumber=${awsRecord.sequenceNumber}, " +
+                "partitionKey=${awsRecord.partitionKey}, attempts=$maxAttempts"
+        )
     }
 
     private fun checkpoint(checkpointer: IRecordProcessorCheckpointer) {

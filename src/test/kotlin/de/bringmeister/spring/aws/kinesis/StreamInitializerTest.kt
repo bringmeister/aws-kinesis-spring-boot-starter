@@ -12,7 +12,6 @@ import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import org.junit.Test
 import org.mockito.Mockito.doReturn
-import java.lang.IllegalStateException
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.TimeUnit
 

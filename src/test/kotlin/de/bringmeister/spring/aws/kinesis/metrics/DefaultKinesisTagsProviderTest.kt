@@ -69,11 +69,12 @@ class DefaultKinesisTagsProviderTest {
     private fun assertTags(tags: Iterable<Tag>, withRetry: Boolean = false, cause: Throwable? = null) {
         assertThat(tags)
             .anyMatch { it.key == "stream" && it.value == streamName }
-            .anyMatch { it.key == "exception" &&
-                when (cause) {
-                    null -> it.value == "None"
-                    else -> it.value == cause::class.simpleName ?: cause::class.java.name
-                }
+            .anyMatch {
+                it.key == "exception" &&
+                    when (cause) {
+                        null -> it.value == "None"
+                        else -> it.value == cause::class.simpleName ?: cause::class.java.name
+                    }
             }
             .anyMatch { !withRetry || (it.key == "retry" && it.value.matches("true|false".toRegex())) }
     }

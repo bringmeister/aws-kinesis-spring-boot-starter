@@ -16,3 +16,4 @@ aws:
     iam-role-to-assume: test
     dynamo-db-settings:
       url: http://localhost:1456
+    consumer-group: example-service

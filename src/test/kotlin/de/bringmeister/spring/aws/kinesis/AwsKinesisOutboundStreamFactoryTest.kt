@@ -32,7 +32,11 @@ class AwsKinesisOutboundStreamFactoryTest {
     fun `should apply post processors to registered handlers`() {
 
         val decorated = TestKinesisOutboundStream()
-        val factory = AwsKinesisOutboundStreamFactory(mockClientProvider, mockRequestFactory, listOf(TestPostProcessor(decorated)))
+        val factory = AwsKinesisOutboundStreamFactory(
+            mockClientProvider,
+            mockRequestFactory,
+            listOf(TestPostProcessor(decorated))
+        )
 
         val stream = factory.forStream("test")
 
@@ -42,7 +46,7 @@ class AwsKinesisOutboundStreamFactoryTest {
 
     private class TestPostProcessor(
         private val decorated: KinesisOutboundStream
-    ): KinesisOutboundStreamPostProcessor {
+    ) : KinesisOutboundStreamPostProcessor {
         override fun postProcess(stream: KinesisOutboundStream) = decorated
     }
 }
