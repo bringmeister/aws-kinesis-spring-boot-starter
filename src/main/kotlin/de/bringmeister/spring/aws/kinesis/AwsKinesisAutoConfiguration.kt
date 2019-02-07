@@ -26,7 +26,7 @@ class AwsKinesisAutoConfiguration {
         kinesisSettings: AwsKinesisSettings
     ): ClientConfigFactory {
 
-        return ClientConfigFactory(credentialsProvider, awsCredentialsProviderFactory, kinesisSettings)
+        return DefaultClientConfigFactory(credentialsProvider, awsCredentialsProviderFactory, kinesisSettings)
     }
 
     @Bean
