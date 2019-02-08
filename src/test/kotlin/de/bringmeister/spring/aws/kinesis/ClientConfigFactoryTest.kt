@@ -15,7 +15,7 @@ class ClientConfigFactoryTest {
     private val credentialsProvider = mock<AWSCredentialsProvider>()
     private val settings = AwsKinesisSettingsTestFactory.settings().withRequired().withConsumerFor("my-kinesis-stream")
     private val clientConfigFactory =
-        ClientConfigFactory(credentialsProvider, credentialsProviderFactory, settings.build())
+        DefaultClientConfigFactory(credentialsProvider, credentialsProviderFactory, settings.build())
 
     @Before
     fun setUp() {
