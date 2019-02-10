@@ -21,7 +21,7 @@ open class WorkerFactory(
 
         val config = clientConfigFactory.consumerConfig(handler.stream)
 
-        return workerBuilder()
+        return workerBuilder(handler.stream)
             .workerStateChangeListener { nextState ->
                 when (nextState) {
                     WorkerStateChangeListener.WorkerState.STARTED -> {
@@ -38,5 +38,5 @@ open class WorkerFactory(
             .build()
     }
 
-    open fun workerBuilder(): Worker.Builder = Worker.Builder()
+    protected open fun workerBuilder(streamName: String): Worker.Builder = Worker.Builder()
 }
