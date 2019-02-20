@@ -13,6 +13,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatCode
 import org.junit.Test
+import java.nio.ByteBuffer
 
 class MetricsInboundHandlerTest {
 
@@ -69,10 +70,11 @@ class MetricsInboundHandlerTest {
 
         val tags = Tags.of("test", "should count deserialization failures, call delegate and bubble exceptions")
         val delegateException = RuntimeException("expected")
+        val data = ByteBuffer.allocate(0)
         whenever(mockTagsProvider.inboundTags("test", null, context, MyException)).thenReturn(tags)
-        whenever(mockDelegate.handleDeserializationError(MyException, context)).doThrow(delegateException)
+        whenever(mockDelegate.handleDeserializationError(MyException, data, context)).doThrow(delegateException)
 
-        assertThatCode { handler.handleDeserializationError(MyException, context) }
+        assertThatCode { handler.handleDeserializationError(MyException, data, context) }
             .isSameAs(delegateException)
 
         assertThat(registry.meters.map { it.id })
