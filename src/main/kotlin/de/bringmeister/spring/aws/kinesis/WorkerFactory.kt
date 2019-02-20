@@ -5,7 +5,7 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.WorkerStateChangeListener
 import org.springframework.context.ApplicationEventPublisher
 
-class WorkerFactory(
+open class WorkerFactory(
     private val clientConfigFactory: ClientConfigFactory,
     private val settings: AwsKinesisSettings,
     private val applicationEventPublisher: ApplicationEventPublisher
@@ -21,8 +21,7 @@ class WorkerFactory(
 
         val config = clientConfigFactory.consumerConfig(handler.stream)
 
-        return Worker
-            .Builder()
+        return workerBuilder(handler.stream)
             .workerStateChangeListener { nextState ->
                 when (nextState) {
                     WorkerStateChangeListener.WorkerState.STARTED -> {
@@ -38,4 +37,6 @@ class WorkerFactory(
             .recordProcessorFactory(processorFactory)
             .build()
     }
+
+    protected open fun workerBuilder(streamName: String): Worker.Builder = Worker.Builder()
 }
