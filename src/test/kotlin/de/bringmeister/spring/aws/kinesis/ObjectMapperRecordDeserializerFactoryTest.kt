@@ -26,9 +26,11 @@ class ObjectMapperRecordDeserializerFactoryTest {
         val deserializer = ObjectMapperRecordDeserializerFactory(mapper)
             .deserializerFor(kinesisListenerProxy)
         val awsRecord = Record()
+            .withPartitionKey("partition 1")
             .withData(ByteBuffer.wrap(messageJson.toByteArray(Charsets.UTF_8)))
         val message = deserializer.deserialize(awsRecord)
 
+        assertThat(message.partitionKey).isEqualTo("partition 1")
         assertThat(message.data).isEqualTo(FooCreatedEvent("any-field"))
         assertThat(message.metadata).isEqualTo(EventMetadata("test"))
     }
