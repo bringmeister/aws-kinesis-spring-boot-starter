@@ -73,8 +73,9 @@ class AwsKinesisRecordProcessor<D, M>(
                 "Exception while transforming record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]",
                 transformationException
             )
-            try { handler.handleDeserializationError(transformationException, context) }
-            catch (ex: Throwable) {
+            try {
+                handler.handleDeserializationError(transformationException, awsRecord.data.asReadOnlyBuffer(), context)
+            } catch (ex: Throwable) {
                 log.error(
                     "Error occurred in handler during call to handleDeserializationError for stream <{}> [sequenceNumber={}, partitionKey={}]",
                     handler.stream, awsRecord.sequenceNumber, awsRecord.partitionKey, ex)

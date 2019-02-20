@@ -1,5 +1,7 @@
 package de.bringmeister.spring.aws.kinesis
 
+import java.nio.ByteBuffer
+
 /**
  * @see KinesisInboundHandlerPostProcessor
  */
@@ -21,7 +23,7 @@ interface KinesisInboundHandler<D, M> {
      * Called instead of [handleRecord] when deserializing an AWS record into
      * [Record] failed.
      */
-    fun handleDeserializationError(cause: Exception, context: ExecutionContext) { }
+    fun handleDeserializationError(cause: Exception, data: ByteBuffer, context: ExecutionContext) { }
 
     /** Indicates that the worker is shutting down. */
     fun shutdown() { }

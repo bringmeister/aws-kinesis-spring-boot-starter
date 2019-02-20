@@ -25,7 +25,7 @@ class ObjectMapperRecordDeserializerFactory(
 
         override fun deserialize(awsRecord: com.amazonaws.services.kinesis.model.Record): Record<D, M> {
             val json = Charset.forName("UTF-8")
-                .decode(awsRecord.data)
+                .decode(awsRecord.data.asReadOnlyBuffer())
                 .toString()
             val record = objectMapper.readValue<Record<D, M>>(json, type)
             val partitionKey = awsRecord.partitionKey ?: ""

@@ -4,6 +4,7 @@ import de.bringmeister.spring.aws.kinesis.KinesisInboundHandler.UnrecoverableExc
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatCode
 import org.junit.Test
+import java.nio.ByteBuffer
 
 class KinesisInboundHandlerTest {
 
@@ -32,7 +33,7 @@ class KinesisInboundHandlerTest {
     fun `should not throw on handleDeserializationError`() {
         val cause = RuntimeException("expected")
         val context = TestKinesisInboundHandler.TestExecutionContext()
-        assertThatCode { handler.handleDeserializationError(cause, context) }
+        assertThatCode { handler.handleDeserializationError(cause, ByteBuffer.allocate(0), context) }
             .doesNotThrowAnyException()
     }
 

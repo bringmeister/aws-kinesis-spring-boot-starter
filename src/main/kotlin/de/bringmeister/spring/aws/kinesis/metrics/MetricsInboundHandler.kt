@@ -4,6 +4,7 @@ import de.bringmeister.spring.aws.kinesis.KinesisInboundHandler
 import de.bringmeister.spring.aws.kinesis.Record
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
+import java.nio.ByteBuffer
 import java.time.Duration
 
 class MetricsInboundHandler<D, M>(
@@ -27,10 +28,10 @@ class MetricsInboundHandler<D, M>(
         }
     }
 
-    override fun handleDeserializationError(cause: Exception, context: KinesisInboundHandler.ExecutionContext) {
+    override fun handleDeserializationError(cause: Exception, data: ByteBuffer, context: KinesisInboundHandler.ExecutionContext) {
         val tags = tagsProvider.inboundTags(stream, null, context, cause)
         registry.timer(metricName, tags).record(Duration.ZERO)
-        delegate.handleDeserializationError(cause, context)
+        delegate.handleDeserializationError(cause, data, context)
     }
 
     private fun record(sample: Timer.Sample, record: Record<D, M>?, context: KinesisInboundHandler.ExecutionContext, cause: Throwable?) {
