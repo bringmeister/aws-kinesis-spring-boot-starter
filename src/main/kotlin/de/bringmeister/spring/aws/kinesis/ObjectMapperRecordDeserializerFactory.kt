@@ -28,7 +28,7 @@ class ObjectMapperRecordDeserializerFactory(
                 .decode(awsRecord.data)
                 .toString()
             val record = objectMapper.readValue<Record<D, M>>(json, type)
-            val partitionKey = awsRecord.partitionKey ?: UUID.randomUUID().toString()
+            val partitionKey = awsRecord.partitionKey ?: ""
 
             return Record(record.data, record.metadata, partitionKey)
         }
