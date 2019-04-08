@@ -1,7 +1,6 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.check
+import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
@@ -13,11 +12,19 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.stereotype.Component
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Component
 private class MyListener {
+
+    private val invoked = AtomicBoolean(false)
+
     @KinesisListener("test-stream")
-    fun handle(data: String, metadata: String) { }
+    fun handle(data: String, metadata: String) {
+        invoked.set(true)
+    }
+
+    fun wasInvoked() = invoked.get()
 }
 
 @ActiveProfiles("test")
@@ -40,10 +47,20 @@ class KinesisListenerPostProcessorIntegrationTest {
 
     @Test
     fun `should register listeners by default`() {
-        verify(gateway).register(check { it: KinesisInboundHandler<*, *> ->
-            assertThat(it.stream).isEqualTo("test-stream")
-            assertThat((it as KinesisListenerProxy).bean).isSameAs(listener)
-        })
+
+        val captor = argumentCaptor<KinesisInboundHandler<String, String>>()
+        verify(gateway).register(captor.capture())
+
+        assertThat(captor.allValues).hasSize(1)
+
+        val proxy =  captor.firstValue
+        assertThat(proxy.stream).isEqualTo("test-stream")
+        assertThat(listener.wasInvoked()).isFalse()
+
+        val record = Record("data", "meta")
+        val context = object : KinesisInboundHandler.ExecutionContext { override val isRetry = false }
+        proxy.handleRecord(record, context)
+        assertThat(listener.wasInvoked()).isTrue()
     }
 }
 
