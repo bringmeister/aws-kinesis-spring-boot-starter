@@ -5,6 +5,7 @@ import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 
@@ -32,5 +33,22 @@ class STSAssumeRoleSessionCredentialsProviderFactoryTest {
         unit.credentials("anyRole")
 
         verify(settings).region
+    }
+
+    @Test
+    fun `should use credentials when set`() {
+
+        val credentials = RoleCredentials().apply {
+            accessKey = "access"
+            secretKey = "secret"
+        }
+        whenever(settings.getRoleCredentials("roleWithCredentials")).thenReturn(credentials)
+
+        val unit = STSAssumeRoleSessionCredentialsProviderFactory(credentialsProvider, settings)
+
+        unit.credentials("roleWithCredentials")
+
+        // it's not really possible to test the credentials, since they are thrown against a token service
+        verify(settings).getRoleCredentials("roleWithCredentials")
     }
 }
