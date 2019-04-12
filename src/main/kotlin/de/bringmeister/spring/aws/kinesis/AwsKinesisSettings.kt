@@ -5,6 +5,7 @@ import com.amazonaws.services.kinesis.metrics.interfaces.MetricsLevel
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.validation.annotation.Validated
 import java.util.concurrent.TimeUnit
+import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 
 @Validated
@@ -45,6 +46,7 @@ class AwsKinesisSettings {
     var creationTimeoutInMilliSeconds = TimeUnit.SECONDS.toMillis(30)
     var consumer: MutableList<StreamSettings> = mutableListOf()
     var producer: MutableList<StreamSettings> = mutableListOf()
+    var roleCredentials: MutableList<RoleCredentials> = mutableListOf()
 
     fun getConsumerSettingsOrDefault(stream: String): StreamSettings {
         return consumer.firstOrNull { it.streamName == stream } ?: return defaultSettingsFor(stream)
@@ -61,6 +63,9 @@ class AwsKinesisSettings {
         defaultSettings.iamRoleToAssume = iamRoleToAssume
         return defaultSettings
     }
+
+    fun getRoleCredentials(roleToAssume: String) =
+        roleCredentials.find { roleToAssume == it.roleArn() }
 }
 
 class RetrySettings {
@@ -92,4 +97,20 @@ class StreamSettings {
 
     @NotNull
     lateinit var iamRoleToAssume: String
+}
+
+class RoleCredentials {
+    @NotBlank
+    lateinit var awsAccountId: String
+
+    @NotBlank
+    lateinit var iamRoleToAssume: String
+
+    @NotBlank
+    lateinit var accessKey: String
+
+    @NotBlank
+    lateinit var secretKey: String
+
+    fun roleArn() = "arn:aws:iam::$awsAccountId:role/$iamRoleToAssume"
 }

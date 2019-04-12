@@ -182,6 +182,22 @@ aws:
         iam-role-to-assume: SpecialKinesisConsumer
 ```
 
+#### Specify credentials per role
+
+AWS credentials are resolved using AWS' `DefaultAWSCredentialsProviderChain`.
+It is possible to override credentials on a per-role basis as follows:
+
+```yaml
+aws:
+  kinesis:
+    role-credentials:
+      - iam-role-to-asssume: <IAM_ROLE>
+        aws-account-id: <ACCOUNT_ID>
+        access-key: "xxx"
+        secret-key: "yyy"
+      - ...
+```
+
 #### Disable automatic registration of `@KinesisListener`
 
 Automatic registration of `@KinesisListener`-annotated methods can be disabled.
@@ -190,7 +206,7 @@ Automatic registration of `@KinesisListener`-annotated methods can be disabled.
 aws:
   kinesis:
     listener:
-        disabled: true
+      disabled: true
 ```
 
 ## Usage
