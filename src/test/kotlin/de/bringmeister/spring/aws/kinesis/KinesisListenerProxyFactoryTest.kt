@@ -31,7 +31,7 @@ class KinesisListenerProxyFactoryTest {
         }
 
         @KinesisListener(stream = "stream-2")
-        fun listener2(data: FooCreatedEvent, metadata: EventMetadata) {
+        fun listener2(data: FooCreatedEvent) {
             // empty
         }
     }

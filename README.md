@@ -246,9 +246,11 @@ The event will be marshalled as JSON using Jackson and send to the Kinesis strea
 ### Consuming messages
 
 In order to consume messages, you need to annotate your listener method with the `KinesisListener` annotation.
-Your class must be a Spring Bean annotated withg `@Service` or `@Component`.
+Your class must be a Spring Bean annotated with `@Service` or `@Component`.
 It will be picked-up automatically and registered as a listener.
-The listener method must take two arguments - one for the actual data and one for the meta data.
+The listener method accepts `data` as first and, optionally, a second `meta` argument.
+The arguments types are user-defined.
+By default, the application-context's configured `ObjectMapper` is used to deserialize stream events of the following format `{"data": <any>, "meta": <any>}` into the types defined for each argument.
 
 Java example:
 
