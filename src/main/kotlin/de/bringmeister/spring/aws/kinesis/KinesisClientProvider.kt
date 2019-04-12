@@ -27,9 +27,9 @@ class KinesisClientProvider(
     }
 
     private fun createClientFor(streamName: String): AmazonKinesis {
-        val streamSettings = kinesisSettings.getProducerSettingsOrDefault(streamName)
-        val roleToAssume = "arn:aws:iam::${streamSettings.awsAccountId}:role/${streamSettings.iamRoleToAssume}"
-        val credentials = credentialFactory.credentials(roleToAssume)
+        val streamSettings = kinesisSettings.getStreamSettingsOrDefault(streamName)
+        val roleArnToAssume = streamSettings.roleArn()
+        val credentials = credentialFactory.credentials(roleArnToAssume)
         return AmazonKinesisClientBuilder
             .standard()
             .withCredentials(credentials)

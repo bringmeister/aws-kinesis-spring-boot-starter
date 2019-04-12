@@ -15,21 +15,21 @@ class STSAssumeRoleSessionCredentialsProviderFactory(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    override fun credentials(roleToAssume: String): AWSCredentialsProvider {
-        val streamCredentialsProvider = when (val credentials = settings.getRoleCredentials(roleToAssume)) {
+    override fun credentials(roleArnToAssume: String): AWSCredentialsProvider {
+        val streamCredentialsProvider = when (val credentials = settings.getRoleCredentials(roleArnToAssume)) {
             null -> {
                 log.debug(
                     "Using application-configured credentials provider <{}> to assume role <{}>.",
-                    credentialsProvider::class.simpleName, roleToAssume)
+                    credentialsProvider::class.simpleName, roleArnToAssume)
                 credentialsProvider
             }
             else -> {
-                log.debug("Using static configuration-provided credentials to assume role <{}>.", roleToAssume)
+                log.debug("Using static configuration-provided credentials to assume role <{}>.", roleArnToAssume)
                 AWSStaticCredentialsProvider(BasicAWSCredentials(credentials.accessKey, credentials.secretKey))
             }
         }
         return STSAssumeRoleSessionCredentialsProvider
-            .Builder(roleToAssume, UUID.randomUUID().toString())
+            .Builder(roleArnToAssume, UUID.randomUUID().toString())
             .withStsClient(
                 AWSSecurityTokenServiceClientBuilder
                     .standard()

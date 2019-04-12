@@ -141,7 +141,7 @@ aws:
 
 If you don't specify anything, by default, `LATEST` value will be used.
 
-#### Configuring listeners
+#### Configuring stream accounts and roles
 
 You can configure listeners to use a dedicated role and account for a stream.
 
@@ -149,11 +149,13 @@ You can configure listeners to use a dedicated role and account for a stream.
 aws:
   kinesis:
     ...
-    consumer:
+    streams:
       - stream-name: my-special-stream
         aws-account-id: "111111111111"
-        iam-role-to-assume: SpecialKinesisConsumer
+        iam-role-to-assume: SpecialKinesisRole
 ```
+
+#### Configure retrying of events
 
 By default, events won't be retried. When the processing of an event fails (can't be deserialized for example), it will 
 be skipped and the next event will be processed. Retrying of events can be activated in the configuration like this:
@@ -166,20 +168,6 @@ aws:
         maxRetries: 5
         backoffTimeInMilliSeconds: 1000 // wait 1 second between retries
     ...
-```
-
-#### Configure producers
-
-You can configure producers in order to use a dedicated role and account for a stream.
-
-```yaml
-aws:
-  kinesis:
-    ...
-    producer:
-      - stream-name: my-special-stream
-        aws-account-id: "111111111111"
-        iam-role-to-assume: SpecialKinesisConsumer
 ```
 
 #### Specify credentials per role

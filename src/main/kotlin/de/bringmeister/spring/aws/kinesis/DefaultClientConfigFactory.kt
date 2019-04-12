@@ -13,9 +13,9 @@ class DefaultClientConfigFactory(
 
     override fun consumerConfig(streamName: String): KinesisClientLibConfiguration {
 
-        val consumerSettings = kinesisSettings.getConsumerSettingsOrDefault(streamName)
-        val roleToAssume = "arn:aws:iam::${consumerSettings.awsAccountId}:role/${consumerSettings.iamRoleToAssume}"
-        val credentials = awsCredentialsProviderFactory.credentials(roleToAssume)
+        val consumerSettings = kinesisSettings.getStreamSettingsOrDefault(streamName)
+        val roleArnToAssume = consumerSettings.roleArn()
+        val credentials = awsCredentialsProviderFactory.credentials(roleArnToAssume)
         val workerId = InetAddress.getLocalHost().canonicalHostName + ":" + UUID.randomUUID()
         val applicationName = "${kinesisSettings.consumerGroup}_$streamName"
 

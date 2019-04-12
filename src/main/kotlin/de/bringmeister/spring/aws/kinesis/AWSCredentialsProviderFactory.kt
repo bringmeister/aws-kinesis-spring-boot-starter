@@ -14,5 +14,5 @@ import com.amazonaws.auth.AWSCredentialsProvider
  * version can be used with the "kinesis-local" profile.
  */
 interface AWSCredentialsProviderFactory {
-    fun credentials(roleToAssume: String): AWSCredentialsProvider
+    fun credentials(roleArnToAssume: String): AWSCredentialsProvider
 }
