@@ -1,5 +1,5 @@
 package de.bringmeister.spring.aws.kinesis
 
 interface WorkerStarter {
-    fun start(runnable: Runnable)
+    fun start(stream: String, runnable: Runnable)
 }

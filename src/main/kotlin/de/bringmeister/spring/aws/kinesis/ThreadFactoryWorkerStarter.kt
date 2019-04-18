@@ -6,7 +6,9 @@ class ThreadFactoryWorkerStarter(
     private val threadFactory: ThreadFactory = ThreadFactory { Thread(it) }
 ) : WorkerStarter {
 
-    override fun start(runnable: Runnable) {
-        threadFactory.newThread(runnable).start()
+    override fun start(stream: String, runnable: Runnable) {
+        threadFactory.newThread(runnable)
+            .apply { name = "worker-$stream" }
+            .start()
     }
 }

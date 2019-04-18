@@ -2,8 +2,8 @@ package de.bringmeister.spring.aws.kinesis
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import org.springframework.scheduling.concurrent.CustomizableThreadFactory
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit
 
 class ThreadFactoryWorkerStarterTest {
@@ -11,9 +11,12 @@ class ThreadFactoryWorkerStarterTest {
     @Test
     fun `should start the given runnable`() {
         val latch = CountDownLatch(1)
-        val runnable = Runnable { latch.countDown() }
+        val runnable = Runnable {
+            assertThat(Thread.currentThread().name).isEqualTo("worker-test-stream")
+            latch.countDown()
+        }
         val workerStarter = ThreadFactoryWorkerStarter()
-        workerStarter.start(runnable)
+        workerStarter.start("test-stream", runnable)
         latch.await(2, TimeUnit.SECONDS) // wait for event-listener thread to process event
         assertThat(latch.count).isEqualTo(0L)
     }
@@ -22,12 +25,12 @@ class ThreadFactoryWorkerStarterTest {
     fun `should use the configured ThreadFactory`() {
         val latch = CountDownLatch(1)
         val runnable = Runnable {
-            assertThat(Thread.currentThread().name).isEqualTo("dedicated-test-thread")
+            assertThat(Thread.currentThread().threadGroup.name).isEqualTo("custom-group")
             latch.countDown()
         }
-        val threadFactory = ThreadFactory { Thread(it).apply { name = "dedicated-test-thread" } }
-        val workerStarter = ThreadFactoryWorkerStarter(threadFactory)
-        workerStarter.start(runnable)
+
+        val workerStarter = ThreadFactoryWorkerStarter(CustomizableThreadFactory().apply { setThreadGroupName("custom-group") })
+        workerStarter.start("test-stream", runnable)
         latch.await(2, TimeUnit.SECONDS) // wait for event-listener thread to process event
         assertThat(latch.count).isEqualTo(0L)
     }
