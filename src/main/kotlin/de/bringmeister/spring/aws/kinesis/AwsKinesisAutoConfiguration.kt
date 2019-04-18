@@ -46,7 +46,7 @@ class AwsKinesisAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    fun workerStarter() = WorkerStarter()
+    fun workerStarter(): WorkerStarter = ThreadFactoryWorkerStarter()
 
     @Bean
     @ConditionalOnMissingBean
