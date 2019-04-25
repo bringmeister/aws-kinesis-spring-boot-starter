@@ -8,7 +8,7 @@ import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import de.bringmeister.spring.aws.kinesis.KinesisInboundHandler
 import de.bringmeister.spring.aws.kinesis.Record
-import de.bringmeister.spring.aws.kinesis.retry.RetryableRecordProcessorSettings.Companion.NO_RETRIES
+import de.bringmeister.spring.aws.kinesis.RetrySettings.Companion.NO_RETRIES
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.catchThrowable
 import org.junit.Test

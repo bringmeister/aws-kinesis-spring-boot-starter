@@ -11,6 +11,8 @@ dependencies {
     integrationTestCompile configurations.testCompile
     integrationTestCompile sourceSets.test.output
     integrationTestRuntime configurations.testRuntime
+
+    integrationTestCompile "org.awaitility:awaitility-kotlin:3.1.6"
 }
 
 task integrationTest(type: Test, dependsOn: jar) {
