@@ -155,19 +155,65 @@ aws:
         iam-role-to-assume: SpecialKinesisRole
 ```
 
-#### Configure retrying of events
+#### Configure handler retries
 
-By default, events won't be retried. When the processing of an event fails (can't be deserialized for example), it will 
-be skipped and the next event will be processed. Retrying of events can be activated in the configuration like this:
+You can configure the retry mechanism for your event handlers like this:
 
 ```yaml
 aws:
   kinesis:
     ...
-    retry:
+    handler:
+      retry:
         maxRetries: 5
-        backoffTimeInMilliSeconds: 1000 // wait 1 second between retries
+        backoff: 100ms
     ...
+```
+
+Max Retries:
+* `0`: No retries
+* `>=1`: Finite amount of retry attempts
+* `-1`: Infinite retries
+
+By default, each record after deserialization will be passed for processing to your handler once (`maxRetries=0`). When an exception occurs, the record will be skipped and the next one will be processed. 
+If you want to retry the processing of failed records automatically, you can do so either infinitely (`maxRetries=-1`) or upto the specified count of attempts (`maxRetries=n`).
+Errors during deserialization on the other hand won't be retried at all, as it make no sense to do so. This behaviour is chosen to prevent killing the consumer with a "poison pill". 
+Such malformed messages will be logged and skipped.
+
+#### Configure checkpointing
+
+Checkpointing is the process of storing the sequence number of the last processed kinesis record in a dynamodb table. It can be configured like this:
+
+```yaml
+aws:
+  kinesis:
+    ...
+    checkpointing:
+        strategy: RECORD
+        retry:
+          maxRetries: 23
+          backoff: 1s
+    ...
+```
+
+Checkpointing strategy:
+* `RECORD`: Checkpoint after each record of a batch
+* `BATCH`: Checkpoint only once after the whole batch of records was processed
+
+By default the `BATCH` strategy is used and will checkpoint only after a whole batch of records is processed.
+
+#### Configure producers
+
+You can configure producers in order to use a dedicated role and account for a stream.
+
+```yaml
+aws:
+  kinesis:
+    ...
+    producer:
+      - stream-name: my-special-stream
+        aws-account-id: "111111111111"
+        iam-role-to-assume: SpecialKinesisConsumer
 ```
 
 #### Specify credentials per role
