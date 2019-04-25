@@ -6,9 +6,14 @@
       "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings"
     },
     {
-      "name": "aws.kinesis.retry",
-      "type": "de.bringmeister.spring.aws.kinesis.RetrySettings",
-      "sourceType": "de.bringmeister.spring.aws.kinesis.RetrySettings"
+      "name": "aws.kinesis.checkpointing",
+      "type": "de.bringmeister.spring.aws.kinesis.CheckpointingSettings",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings"
+    },
+    {
+      "name": "aws.kinesis.handler.retry",
+      "type": "de.bringmeister.spring.aws.kinesis.retry.RetryableRecordProcessorSettings",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.retry.RetryableRecordProcessorSettings"
     },
     {
       "name": "aws.kinesis.dynamo-db-settings",
@@ -63,16 +68,34 @@
       "defaultValue": "http://localhost:14567"
     },
     {
-      "name": "aws.kinesis.retry.max-retries",
+      "name": "aws.kinesis.checkpointing.strategy",
+      "type": "de.bringmeister.spring.aws.kinesis.CheckpointingStrategy",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.CheckpointingSettings",
+      "defaultValue": "BATCH"
+    },
+    {
+      "name": "aws.kinesis.checkpointing.retry.max-retries",
       "type": "java.lang.Integer",
       "sourceType": "de.bringmeister.spring.aws.kinesis.RetrySettings",
       "defaultValue": 0
     },
     {
-      "name": "aws.kinesis.retry.backoff-time-in-milli-seconds",
-      "type": "java.lang.Integer",
+      "name": "aws.kinesis.checkpointing.retry.backoff",
+      "type": "java.time.Duration",
       "sourceType": "de.bringmeister.spring.aws.kinesis.RetrySettings",
-      "defaultValue": 1000
+      "defaultValue": "1s"
+    },
+    {
+      "name": "aws.kinesis.handler.retry.max-retries",
+      "type": "java.lang.Integer",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.retry.RetryableRecordProcessorSettings",
+      "defaultValue": "0"
+    },
+    {
+      "name": "aws.kinesis.handler.retry.backoff",
+      "type": "java.time.Duration",
+      "sourceType": "de.bringmeister.spring.aws.kinesis.retry.RetryableRecordProcessorSettings",
+      "defaultValue": "1s"
     },
     {
       "name": "aws.kinesis.dynamo-db-settings.url",

@@ -58,7 +58,7 @@ class KinesisListenerPostProcessorIntegrationTest {
         assertThat(listener.wasInvoked()).isFalse()
 
         val record = Record("data", "meta")
-        val context = object : KinesisInboundHandler.ExecutionContext { override val isRetry = false }
+        val context = TestKinesisInboundHandler.TestExecutionContext()
         proxy.handleRecord(record, context)
         assertThat(listener.wasInvoked()).isTrue()
     }

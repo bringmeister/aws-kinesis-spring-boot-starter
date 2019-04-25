@@ -8,8 +8,6 @@ open class DefaultKinesisTagsProvider : KinesisTagsProvider {
 
     companion object {
         private val EXCEPTION_NONE = Tag.of("exception", "None")
-        private val RETRY_TRUE = Tag.of("retry", "true")
-        private val RETRY_FALSE = Tag.of("retry", "false")
 
         fun exception(exception: Throwable?): Tag {
             if (exception != null) {
@@ -23,12 +21,6 @@ open class DefaultKinesisTagsProvider : KinesisTagsProvider {
             return EXCEPTION_NONE
         }
 
-        fun retry(retry: Boolean): Tag =
-            when (retry) {
-                true -> RETRY_TRUE
-                false -> RETRY_FALSE
-            }
-
         fun stream(stream: String): Tag = Tag.of("stream", stream)
     }
 
@@ -37,7 +29,7 @@ open class DefaultKinesisTagsProvider : KinesisTagsProvider {
         record: Record<*, *>?,
         context: KinesisInboundHandler.ExecutionContext,
         cause: Throwable?
-    ) = listOf(stream(stream), retry(context.isRetry), exception(cause))
+    ) = listOf(stream(stream), exception(cause))
 
     override fun outboundTags(
         stream: String,
