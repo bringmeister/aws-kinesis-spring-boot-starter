@@ -1,8 +1,7 @@
 package de.bringmeister.spring.aws.kinesis
 
-class WorkerStarter {
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
 
-    fun start(runnable: Runnable) {
-        Thread(runnable).start()
-    }
+interface WorkerStarter {
+    fun startWorker(stream: String, worker: Worker)
 }

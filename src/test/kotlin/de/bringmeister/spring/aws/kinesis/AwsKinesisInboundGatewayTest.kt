@@ -33,7 +33,7 @@ class AwsKinesisInboundGatewayTest {
     @Test
     fun `when registering a listener instance it should run worker`() {
         inboundGateway.register(handler)
-        verify(workerStarter).start(worker)
+        verify(workerStarter).startWorker(handler.stream, worker)
     }
 
     @Test
