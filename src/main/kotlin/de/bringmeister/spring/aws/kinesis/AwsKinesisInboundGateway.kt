@@ -19,7 +19,7 @@ class AwsKinesisInboundGateway(
             postProcessor.postProcess(it)
         }
         val worker = worker(decorated)
-        workerStarter.start(handler.stream, worker)
+        workerStarter.startWorker(handler.stream, worker)
         log.info("Started AWS Kinesis listener. [stream={}]", handler.stream)
     }
 

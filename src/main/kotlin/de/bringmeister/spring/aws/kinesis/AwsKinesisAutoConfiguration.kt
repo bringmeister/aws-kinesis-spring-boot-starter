@@ -46,7 +46,7 @@ class AwsKinesisAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    fun workerStarter(): WorkerStarter = ThreadFactoryWorkerStarter()
+    fun workerStarter(): WorkerStarter = SpringLifecycleWorkerStarter()
 
     @Bean
     @ConditionalOnMissingBean
