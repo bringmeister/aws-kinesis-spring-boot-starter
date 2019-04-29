@@ -21,7 +21,7 @@ class KinesisListenerProxy(
             1 -> {
                 this.dataClass = parameters[0].type as Class<Any>
                 this.metaClass = Void::class.java as Class<Any>
-                this.listener = { data, meta -> method.invoke(bean, data) }
+                this.listener = { data, _ -> method.invoke(bean, data) }
             }
             2 -> {
                 this.dataClass = parameters[0].type as Class<Any>
