@@ -97,13 +97,16 @@ class SpringLifecycleWorkerStarter(
     }
 
     private fun startWorkerDelayed(stream: String, worker: Worker) {
+        log.debug("Start of Kinesis worker for stream <{}> is delayed until Spring application is fully loaded.")
         delayedStart[stream] = worker
     }
 
     private fun startWorkerNow(stream: String, worker: Worker) {
+        log.debug("Starting Kinesis worker for stream <{}>...")
         threadFactory.newThread(worker)
             .apply { name = "worker-$stream" }
             .start()
+        log.info("Kinesis worker for stream <{}> started.")
         workers[worker] = stream
     }
 
