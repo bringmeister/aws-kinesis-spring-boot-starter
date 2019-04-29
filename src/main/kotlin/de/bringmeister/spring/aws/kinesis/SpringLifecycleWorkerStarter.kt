@@ -44,21 +44,21 @@ class SpringLifecycleWorkerStarter(
 
     @Synchronized
     override fun start() {
-        log.info("Kinesis Worker threads start initiated...")
+        log.info("Kinesis worker threads start initiated...")
 
         for ((stream, worker) in delayedStart) {
             startWorkerNow(stream, worker)
         }
 
         started.set(true)
-        log.info("Kinesis Worker threads started.")
+        log.info("Kinesis worker threads started.")
     }
 
     override fun stop() {
         // Runs in parallel to all other hooks with the same phase value,
         // but before everyone with lower values.
 
-        log.info("Kinesis Worker shutdown initiated...")
+        log.info("Kinesis worker shutdown initiated...")
 
         // stop kinesis workers and await their shutdown
         try {
@@ -76,9 +76,9 @@ class SpringLifecycleWorkerStarter(
                             )
                         }
                     } catch (ex: TimeoutException) {
-                        log.error("Kinesis worker of stream <$stream> did not properly shut down within ${workerShutdownTimeout.seconds} seconds.")
+                        log.error("Kinesis worker of stream <{}> did not properly shut down within {} seconds.", stream, workerShutdownTimeout.seconds)
                     } catch (ex: ExecutionException) {
-                        log.error("Kinesis worker of stream <$stream> shut down with an exception.", ex)
+                        log.error("Kinesis worker of stream <{}> shut down with an exception.", stream, ex)
                     }
                 }
             }
@@ -93,20 +93,20 @@ class SpringLifecycleWorkerStarter(
             log.error("Shutdown of Kinesis workers failed.", ex)
         }
 
-        log.info("Kinesis Worker shutdown phase completed.")
+        log.info("Kinesis worker shutdown phase completed.")
     }
 
     private fun startWorkerDelayed(stream: String, worker: Worker) {
-        log.debug("Start of Kinesis worker for stream <{}> is delayed until Spring application is fully loaded.")
+        log.debug("Start of Kinesis worker for stream <{}> is delayed until Spring application is fully loaded.", stream)
         delayedStart[stream] = worker
     }
 
     private fun startWorkerNow(stream: String, worker: Worker) {
-        log.debug("Starting Kinesis worker for stream <{}>...")
+        log.debug("Starting Kinesis worker for stream <{}>...", stream)
         threadFactory.newThread(worker)
             .apply { name = "worker-$stream" }
             .start()
-        log.info("Kinesis worker for stream <{}> started.")
+        log.info("Kinesis worker for stream <{}> started.", stream)
         workers[worker] = stream
     }
 
