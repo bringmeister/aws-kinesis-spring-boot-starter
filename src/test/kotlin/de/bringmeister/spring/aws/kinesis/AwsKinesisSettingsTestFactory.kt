@@ -22,7 +22,7 @@ class AwsKinesisSettingsTestFactory {
         producerSettings.awsAccountId = "100000000042"
         producerSettings.iamRoleToAssume = "kinesis-user-role"
 
-        settings!!.producer.add(producerSettings)
+        settings!!.streams.add(producerSettings)
 
         return this
     }
@@ -34,7 +34,7 @@ class AwsKinesisSettingsTestFactory {
         consumerSettings.awsAccountId = "100000000042"
         consumerSettings.iamRoleToAssume = "kinesis-user-role"
 
-        settings!!.consumer.add(consumerSettings)
+        settings!!.streams.add(consumerSettings)
         settings!!.consumerGroup = "my-consumer-group"
         return this
     }

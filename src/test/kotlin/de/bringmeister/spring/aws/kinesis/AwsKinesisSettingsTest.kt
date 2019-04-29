@@ -20,39 +20,21 @@ class AwsKinesisProducerSettingsTest {
     private lateinit var localValidatorFactoryBean: LocalValidatorFactoryBean
 
     @Test
-    fun `should read producer settings`() {
+    fun `should read streams settings`() {
 
         val settings = builder<AwsKinesisSettings>()
             .withPrefix("aws.kinesis")
             .withProperty("region", "local")
             .withProperty("kinesis-url", "http://localhost:14567")
-            .withProperty("producer[0].streamName", "foo-event-stream")
-            .withProperty("producer[0].awsAccountId", "222222222222")
-            .withProperty("producer[0].iamRoleToAssume", "ExampleKinesisProducerRole")
+            .withProperty("streams[0].streamName", "foo-event-stream")
+            .withProperty("streams[0].awsAccountId", "222222222222")
+            .withProperty("streams[0].iamRoleToAssume", "ExampleKinesisRole")
             .validateUsing(localValidatorFactoryBean)
             .build()
 
-        assertThat(settings.producer[0].streamName).isEqualTo("foo-event-stream")
-        assertThat(settings.producer[0].awsAccountId).isEqualTo("222222222222")
-        assertThat(settings.producer[0].iamRoleToAssume).isEqualTo("ExampleKinesisProducerRole")
-    }
-
-    @Test
-    fun `should read consumer settings`() {
-
-        val settings = builder<AwsKinesisSettings>()
-            .withPrefix("aws.kinesis")
-            .withProperty("region", "local")
-            .withProperty("kinesis-url", "http://localhost:14567")
-            .withProperty("consumer[0].streamName", "foo-event-stream")
-            .withProperty("consumer[0].awsAccountId", "111111111111")
-            .withProperty("consumer[0].iamRoleToAssume", "ExampleKinesisConsumerRole")
-            .validateUsing(localValidatorFactoryBean)
-            .build()
-
-        assertThat(settings.consumer[0].streamName).isEqualTo("foo-event-stream")
-        assertThat(settings.consumer[0].awsAccountId).isEqualTo("111111111111")
-        assertThat(settings.consumer[0].iamRoleToAssume).isEqualTo("ExampleKinesisConsumerRole")
+        assertThat(settings.streams[0].streamName).isEqualTo("foo-event-stream")
+        assertThat(settings.streams[0].awsAccountId).isEqualTo("222222222222")
+        assertThat(settings.streams[0].iamRoleToAssume).isEqualTo("ExampleKinesisRole")
     }
 
     @Test

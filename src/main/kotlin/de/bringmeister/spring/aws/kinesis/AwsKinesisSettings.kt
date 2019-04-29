@@ -14,9 +14,9 @@ class AwsKinesisSettings {
 
     @NotNull
     lateinit var region: String // Example: eu-central-1, local
-    lateinit var awsAccountId: String // Example: 123456789012
-    lateinit var iamRoleToAssume: String // Example: role_name
     lateinit var consumerGroup: String // Example: my-service
+    var awsAccountId: String? = null // Example: 123456789012
+    var iamRoleToAssume: String? = null // Example: role_name
 
     var retry: RetrySettings = RetrySettings()
 
@@ -44,28 +44,25 @@ class AwsKinesisSettings {
     var metricsLevel = MetricsLevel.NONE.name
     var createStreams: Boolean = false
     var creationTimeoutInMilliSeconds = TimeUnit.SECONDS.toMillis(30)
-    var consumer: MutableList<StreamSettings> = mutableListOf()
-    var producer: MutableList<StreamSettings> = mutableListOf()
+    var streams: MutableList<StreamSettings> = mutableListOf()
     var roleCredentials: MutableList<RoleCredentials> = mutableListOf()
 
-    fun getConsumerSettingsOrDefault(stream: String): StreamSettings {
-        return consumer.firstOrNull { it.streamName == stream } ?: return defaultSettingsFor(stream)
-    }
-
-    fun getProducerSettingsOrDefault(stream: String): StreamSettings {
-        return producer.firstOrNull { it.streamName == stream } ?: return defaultSettingsFor(stream)
+    fun getStreamSettingsOrDefault(stream: String): StreamSettings {
+        return streams.firstOrNull { it.streamName == stream } ?: return defaultSettingsFor(stream)
     }
 
     private fun defaultSettingsFor(stream: String): StreamSettings {
         val defaultSettings = StreamSettings()
         defaultSettings.streamName = stream
-        defaultSettings.awsAccountId = awsAccountId
-        defaultSettings.iamRoleToAssume = iamRoleToAssume
+        defaultSettings.awsAccountId = awsAccountId ?: throw IllegalStateException(
+            "Either explicitly enumerate each stream via <aws.kinesis.streams> or set a default account id via <aws.kinesis.aws-account-id>.")
+        defaultSettings.iamRoleToAssume = iamRoleToAssume ?: throw IllegalStateException(
+            "Either explicitly enumerate each stream via <aws.kinesis.streams> or set a default role to assume via <aws.kinesis.iam-role-to-assume>.")
         return defaultSettings
     }
 
-    fun getRoleCredentials(roleToAssume: String) =
-        roleCredentials.find { roleToAssume == it.roleArn() }
+    fun getRoleCredentials(roleArnToAssume: String) =
+        roleCredentials.find { roleArnToAssume == it.roleArn() }
 }
 
 class RetrySettings {
@@ -97,6 +94,8 @@ class StreamSettings {
 
     @NotNull
     lateinit var iamRoleToAssume: String
+
+    fun roleArn() = roleArn(awsAccountId, iamRoleToAssume)
 }
 
 class RoleCredentials {
@@ -112,5 +111,8 @@ class RoleCredentials {
     @NotBlank
     lateinit var secretKey: String
 
-    fun roleArn() = "arn:aws:iam::$awsAccountId:role/$iamRoleToAssume"
+    fun roleArn() = roleArn(awsAccountId, iamRoleToAssume)
 }
+
+private fun roleArn(awsAccountId: String, iamRoleToAssume: String) =
+    "arn:aws:iam::$awsAccountId:role/$iamRoleToAssume"
