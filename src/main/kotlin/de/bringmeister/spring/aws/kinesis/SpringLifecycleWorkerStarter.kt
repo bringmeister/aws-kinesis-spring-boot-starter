@@ -22,6 +22,11 @@ class SpringLifecycleWorkerStarter(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
+    companion object {
+        /** We're last to start and first to shutdown. */
+        const val KINESIS_PHASE = Integer.MAX_VALUE
+    }
+
     private val started = AtomicBoolean(!delayWorkerStartUntilComponentStarted)
     private val delayedStart = mutableMapOf<String, Worker>()
 
@@ -31,8 +36,7 @@ class SpringLifecycleWorkerStarter(
      */
     private val workers = WeakHashMap<Worker, String>()
 
-    /** We're last to start and first to shutdown. */
-    override fun getPhase(): Int = Integer.MAX_VALUE
+    override fun getPhase(): Int = KINESIS_PHASE
 
     override fun isRunning(): Boolean {
         return workers.keys.any { !it.hasGracefulShutdownStarted() }
