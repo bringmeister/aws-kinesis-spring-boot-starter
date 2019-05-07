@@ -1,27 +1,28 @@
 package de.bringmeister.spring.aws.kinesis;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
+import de.bringmeister.spring.aws.kinesis.creation.KinesisCreateStreamAutoConfiguration;
+import de.bringmeister.spring.aws.kinesis.metrics.KinesisMetricsAutoConfiguration;
+import de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfiguration;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.testcontainers.containers.GenericContainer;
-import de.bringmeister.spring.aws.kinesis.creation.KinesisCreateStreamAutoConfiguration;
-import de.bringmeister.spring.aws.kinesis.metrics.KinesisMetricsAutoConfiguration;
-import de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfiguration;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ActiveProfiles("kinesis-local")
 @SpringBootTest(
@@ -39,6 +40,7 @@ import java.util.function.Consumer;
         "aws.kinesis.initial-position-in-stream: TRIM_HORIZON"
     }
 )
+@DirtiesContext(classMode= DirtiesContext.ClassMode.AFTER_CLASS)
 @RunWith(SpringRunner.class)
 public class JavaListenerTest {
 

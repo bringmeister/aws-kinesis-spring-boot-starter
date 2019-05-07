@@ -5,6 +5,7 @@ import de.bringmeister.spring.aws.kinesis.metrics.KinesisMetricsAutoConfiguratio
 import de.bringmeister.spring.aws.kinesis.retry.RetryableRecordHandlerAutoConfiguration
 import de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 
 @ActiveProfiles("kinesis-local")
@@ -22,4 +23,5 @@ import org.springframework.test.context.ActiveProfiles
         "aws.kinesis.initial-position-in-stream: TRIM_HORIZON"
     ]
 )
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 annotation class ContainerTest
