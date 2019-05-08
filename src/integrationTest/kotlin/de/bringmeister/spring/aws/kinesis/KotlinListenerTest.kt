@@ -1,76 +1,68 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.github.dockerjava.api.model.ExposedPort
-import com.github.dockerjava.api.model.PortBinding
-import com.github.dockerjava.api.model.Ports
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ActiveProfiles
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.junit4.SpringRunner
-import org.testcontainers.containers.GenericContainer
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import de.bringmeister.spring.aws.kinesis.creation.KinesisCreateStreamAutoConfiguration
-import de.bringmeister.spring.aws.kinesis.metrics.KinesisMetricsAutoConfiguration
-import de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfiguration
 
-@ActiveProfiles("kinesis-local")
-@SpringBootTest(
-    classes = [
-        KotlinTestListener::class,
-        JacksonConfiguration::class,
-        JacksonAutoConfiguration::class,
-        KinesisLocalConfiguration::class,
-        AwsKinesisAutoConfiguration::class,
-        KinesisCreateStreamAutoConfiguration::class,
-        KinesisValidationAutoConfiguration::class,
-        KinesisMetricsAutoConfiguration::class
-    ],
-    properties = [
-        "aws.kinesis.initial-position-in-stream: TRIM_HORIZON"
-    ]
-)
 @RunWith(SpringRunner::class)
+@ContainerTest
+@Import(KotlinListenerTest.Config::class)
 class KotlinListenerTest {
 
     @Autowired
     lateinit var outbound: AwsKinesisOutboundGateway
 
+    @TestConfiguration
+    class Config {
+
+        @Bean
+        fun eventHandler() = object {
+
+            @KinesisListener(STREAM)
+            fun handle(data: String, metadata: String) {
+
+                assertThat(data).isEqualTo(EXPECTED_DATA)
+                assertThat(metadata).isEqualTo(EXPECTED_METADATA)
+
+                expectedRecordsCounter.countDown()
+            }
+        }
+    }
+
     companion object {
-
-        val latch = CountDownLatch(1)
-
-        class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
+        @ClassRule
+        @JvmField
+        val kinesis = Containers.kinesis()
 
         @ClassRule
         @JvmField
-        val kinesis = KGenericContainer("instructure/kinesalite:latest").withCreateContainerCmdModifier({
-            it.withPortBindings(Ports(PortBinding(Ports.Binding("localhost", "14567"), ExposedPort.tcp(4567))))
-        })
+        val dynamodb = Containers.dynamoDb()
 
-        @ClassRule
-        @JvmField
-        val dynamodb = KGenericContainer("richnorth/dynalite:latest").withCreateContainerCmdModifier({
-            it.withPortBindings(Ports(PortBinding(Ports.Binding("localhost", "14568"), ExposedPort.tcp(4567))))
-        })
+        const val STREAM = "any-stream"
+        const val EXPECTED_DATA = "my-data"
+        const val EXPECTED_METADATA = "my-metadata"
+
+        lateinit var expectedRecordsCounter: CountDownLatch
     }
 
     @Test
     fun `should send and receive events`() {
+        expectedRecordsCounter = CountDownLatch(1)
+        outbound.send(STREAM, Record(EXPECTED_DATA, EXPECTED_METADATA))
 
-        val fooEvent = FooCreatedEvent("any-field")
-        val metadata = EventMetadata("test")
+        val recordsProcessed = waitForRecordsToBeProcessed()
 
-        outbound.send("foo-event-stream", Record(fooEvent, metadata))
-
-        val messageReceived = latch.await(1, TimeUnit.MINUTES) // wait for event-listener thread to process event
-
-        assertThat(messageReceived).isTrue()
+        assertThat(recordsProcessed).isTrue()
     }
+
+    private fun waitForRecordsToBeProcessed() = expectedRecordsCounter.await(1, TimeUnit.MINUTES)
 }
 

@@ -28,8 +28,7 @@ class ValidatingInboundHandlerTest {
                 whenever(mockValidator.validate(anyVararg<Any>())).thenReturn(setOf(mock()))
                 handler.handleRecord(record, context)
             }
-            .hasCauseInstanceOf(ValidationException::class.java)
-            .isInstanceOf(KinesisInboundHandler.UnrecoverableException::class.java)
+            .isInstanceOf(ValidationException::class.java)
         verifyZeroInteractions(mockDelegate)
     }
 

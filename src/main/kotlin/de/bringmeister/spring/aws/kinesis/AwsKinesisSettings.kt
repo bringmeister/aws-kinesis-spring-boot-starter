@@ -4,7 +4,9 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionIn
 import com.amazonaws.services.kinesis.metrics.interfaces.MetricsLevel
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.validation.annotation.Validated
+import java.time.Duration
 import java.util.concurrent.TimeUnit
+import javax.validation.constraints.Min
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 
@@ -18,7 +20,7 @@ class AwsKinesisSettings {
     var awsAccountId: String? = null // Example: 123456789012
     var iamRoleToAssume: String? = null // Example: role_name
 
-    var retry: RetrySettings = RetrySettings()
+    var checkpointing = CheckpointingSettings()
 
     var kinesisUrl: String? = null // Example: http://localhost:14567
         get() {
@@ -65,14 +67,22 @@ class AwsKinesisSettings {
         roleCredentials.find { roleArnToAssume == it.roleArn() }
 }
 
+@Validated
+class CheckpointingSettings {
+    var strategy: CheckpointingStrategy = CheckpointingStrategy.BATCH
+    var retry: RetrySettings = RetrySettings()
+}
+
+@Validated
 class RetrySettings {
 
     companion object {
         const val NO_RETRIES = 0
     }
 
+    @Min(0)
     var maxRetries = NO_RETRIES
-    var backoffTimeInMilliSeconds = TimeUnit.SECONDS.toMillis(1)
+    var backoff = Duration.ofSeconds(1)
 }
 
 class DynamoDbSettings {

@@ -7,6 +7,7 @@ import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessor
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.WorkerStateChangeListener
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 
 open class WorkerFactory(
@@ -15,11 +16,21 @@ open class WorkerFactory(
     private val applicationEventPublisher: ApplicationEventPublisher
 ) {
 
+    val log = LoggerFactory.getLogger(javaClass)
+
     fun <D, M> worker(handler: KinesisInboundHandler<D, M>, recordDeserializer: RecordDeserializer<D, M>): Worker {
 
         val processorFactory: () -> (IRecordProcessor) = {
-            val configuration =
-                RecordProcessorConfiguration(settings.retry.maxRetries, settings.retry.backoffTimeInMilliSeconds)
+
+            val checkpointingConfiguration = CheckpointingConfiguration(
+                strategy = settings.checkpointing.strategy,
+                maxRetries = settings.checkpointing.retry.maxRetries,
+                backoff = settings.checkpointing.retry.backoff)
+
+            val configuration = RecordProcessorConfiguration(checkpointing = checkpointingConfiguration)
+
+            log.debug("Creating worker with following configuration [{}]", configuration)
+
             AwsKinesisRecordProcessor(recordDeserializer, configuration, handler, applicationEventPublisher)
         }
 

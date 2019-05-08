@@ -11,6 +11,7 @@ import org.springframework.boot.context.properties.bind.BindException
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
+import java.time.Duration
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [ValidationAutoConfiguration::class])
@@ -83,18 +84,18 @@ class AwsKinesisProducerSettingsTest {
     }
 
     @Test
-    fun `should allow retry configuration`() {
+    fun `should allow checkpointing retry configuration`() {
 
         val settings = builder<AwsKinesisSettings>()
             .withPrefix("aws.kinesis")
             .withProperty("region", "eu-central-1")
-            .withProperty("retry.maxRetries", "3")
-            .withProperty("retry.backoffTimeInMilliSeconds", "23")
+            .withProperty("checkpointing.retry.maxRetries", "3")
+            .withProperty("checkpointing.retry.backoff", "23s")
             .validateUsing(localValidatorFactoryBean)
             .build()
 
-        assertThat(settings.retry.maxRetries).isEqualTo(3)
-        assertThat(settings.retry.backoffTimeInMilliSeconds).isEqualTo(23L)
+        assertThat(settings.checkpointing.retry.maxRetries).isEqualTo(3)
+        assertThat(settings.checkpointing.retry.backoff).isEqualTo(Duration.ofSeconds(23))
     }
 
     @Test(expected = BindException::class)

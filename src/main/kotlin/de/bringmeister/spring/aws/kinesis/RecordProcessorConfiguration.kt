@@ -1,3 +1,11 @@
 package de.bringmeister.spring.aws.kinesis
 
-data class RecordProcessorConfiguration(val maxRetries: Int, val backoffTimeInMilliSeconds: Long)
+import java.time.Duration
+
+data class RecordProcessorConfiguration(val checkpointing: CheckpointingConfiguration)
+
+data class CheckpointingConfiguration(val maxRetries: Int, val backoff: Duration, val strategy: CheckpointingStrategy = CheckpointingStrategy.BATCH)
+
+enum class CheckpointingStrategy {
+    BATCH, RECORD
+}
