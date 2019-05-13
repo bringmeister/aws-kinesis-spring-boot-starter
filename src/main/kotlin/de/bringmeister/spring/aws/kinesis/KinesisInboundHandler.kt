@@ -14,6 +14,12 @@ interface KinesisInboundHandler<D, M> {
     /** Called for each message. */
     fun handleRecord(record: Record<D, M>, context: ExecutionContext)
 
+    /** Called to handle batch records **/
+    fun handleRecords(records: List<Record<D, M>>)
+
+    /** Check if listener is a batch **/
+    fun isBatch(): Boolean
+
     /**
      * Called instead of [handleRecord] when deserializing an AWS record into
      * [Record] failed.

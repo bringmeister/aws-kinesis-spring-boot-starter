@@ -37,6 +37,19 @@ class AwsKinesisRecordProcessor<D, M>(
         val records = processRecordsInput.records()
         val checkpointer = processRecordsInput.checkpointer()
         log.trace("Received [{}] records on shard <{}> of <{}>.", records.size, shardId, handler.stream)
+        if (handler.isBatch()) {
+            processRecordsBatch(processRecordsInput)
+        } else {
+            processRecordsSingle(processRecordsInput)
+        }
+    }
+
+    private fun processRecordsBatch(processRecordsInput: ProcessRecordsInput) {
+        handler.handleRecords(processRecordsInput.records.mapNotNull { toRecord(it)?.first })
+        checkpoint(processRecordsInput.checkpointer)
+    }
+
+    private fun processRecordsSingle(processRecordsInput: ProcessRecordsInput) {
         for (record in records) {
             processRecord(record)
 
@@ -53,10 +66,14 @@ class AwsKinesisRecordProcessor<D, M>(
     private fun processRecord(awsRecord: KinesisClientRecord) {
         val sequenceNumber = awsRecord.sequenceNumber()
         val partitionKey = awsRecord.partitionKey()
+        toRecord(awsRecord)?.let { handler.handleRecord(it.first, it.second) }
+    }
+
+    private fun toRecord(awsRecord: AwsRecord): Pair<Record<D, M>, AwsExecutionContext>? {
         log.trace("Processing record at sequence number <{}> on shard <{}> of <{}>...", sequenceNumber, shardId, handler.stream)
         val context = AwsExecutionContext(shardId = shardId, sequenceNumber = sequenceNumber)
 
-        val record: Record<D, M> = try {
+        val record = try {
             recordDeserializer.deserialize(awsRecord)
         } catch (deserializationException: Exception) {
             log.error(
@@ -71,10 +88,9 @@ class AwsKinesisRecordProcessor<D, M>(
                     handler.stream, sequenceNumber, partitionKey, e
                 )
             }
-            return
+            null
         }
-
-        handler.handleRecord(record, context)
+        return record?.let { Pair(it, context) }
     }
 
     private fun checkpoint(checkpointer: RecordProcessorCheckpointer, record: KinesisClientRecord? = null) {

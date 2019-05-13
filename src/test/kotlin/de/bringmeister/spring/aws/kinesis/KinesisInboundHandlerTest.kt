@@ -9,10 +9,12 @@ class KinesisInboundHandlerTest {
     private val handler = object : KinesisInboundHandler<Any, Any> {
 
         override val stream get() = "test"
-        override fun handleRecord(record: Record<Any, Any>, context: KinesisInboundHandler.ExecutionContext) { }
+        override fun handleRecord(record: Record<Any, Any>, context: KinesisInboundHandler.ExecutionContext) {}
+        override fun handleRecords(records: List<Record<Any, Any>>) {}
 
         override fun dataType() = Any::class.java
         override fun metaType() = Any::class.java
+        override fun isBatch() = false
     }
 
     @Test
