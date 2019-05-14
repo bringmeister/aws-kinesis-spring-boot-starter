@@ -19,8 +19,8 @@ class KinesisListenerProxyFactoryTest {
         val dummyListener = DummyListener()
         val kinesisListenerProxies = kinesisListenerProxyFactory.proxiesFor(dummyListener)
 
-        assertThat(kinesisListenerProxies).hasSize(2)
-        assertThat(kinesisListenerProxies.stream().map { it.stream }).contains("stream-1", "stream-2")
+        assertThat(kinesisListenerProxies).hasSize(3)
+        assertThat(kinesisListenerProxies.stream().map { it.stream }).contains("stream-1", "stream-2", "stream-3")
     }
 
     private class DummyListener {
@@ -32,6 +32,11 @@ class KinesisListenerProxyFactoryTest {
 
         @KinesisListener(stream = "stream-2")
         fun listener2(data: FooCreatedEvent) {
+            // empty
+        }
+
+        @KinesisListener(stream = "stream-3")
+        fun listener3(data: Map<FooCreatedEvent, EventMetadata>) {
             // empty
         }
     }
