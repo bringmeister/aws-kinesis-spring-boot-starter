@@ -68,7 +68,19 @@ public class JavaListenerTest {
         FooCreatedEvent fooEvent = new FooCreatedEvent("any-field");
         EventMetadata metadata = new EventMetadata("test");
 
-        outbound.send("foo-event-stream", new Record(fooEvent, metadata));
+        outbound.send("foo-event-stream", new Record<>(fooEvent, metadata));
+
+        boolean messageReceived = LATCH.await(1, TimeUnit.MINUTES); // wait for event-listener thread to process event
+
+        assertThat(messageReceived).isTrue();
+    }
+
+    @Test
+    public void should_send_and_receive_events_with_batch() throws InterruptedException {
+        FooCreatedEvent fooEvent = new FooCreatedEvent("any-field");
+        EventMetadata metadata = new EventMetadata("test");
+
+        outbound.send("foo-event-stream-batch", new Record<>(fooEvent, metadata));
 
         boolean messageReceived = LATCH.await(1, TimeUnit.MINUTES); // wait for event-listener thread to process event
 
