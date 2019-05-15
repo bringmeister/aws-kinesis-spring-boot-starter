@@ -24,14 +24,15 @@ class KinesisListenerProxy(
             1 -> {
                 val type = parameters[0].type
                 if (type.isAssignableFrom(Map::class.java)) {
-                    this.dataClass = Void::class.java as Class<Any>
+                    this.dataClass = Any::class.java
+                    this.metaClass = Any::class.java
                     this.listeners = { events -> method.invoke(bean, events)}
                     this.batch.set(true)
                 } else {
                     this.dataClass = parameters[0].type as Class<Any>
+                    this.metaClass = Void::class.java as Class<Any>
                     this.listener = { data, _ -> method.invoke(bean, data) }
                 }
-                this.metaClass = Void::class.java as Class<Any>
             }
             2 -> {
                 this.dataClass = parameters[0].type as Class<Any>
@@ -54,7 +55,7 @@ class KinesisListenerProxy(
 
     override fun handleRecords(records: List<Record<Any, Any>>) {
         try {
-            listeners.invoke(records.map { it.metadata to it.data }.toMap())
+            listeners.invoke(records.map { it.data to it.metadata }.toMap())
         } catch (ex: InvocationTargetException) {
             throw ex.targetException
         }

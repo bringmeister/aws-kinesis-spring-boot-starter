@@ -34,6 +34,15 @@ class KotlinListenerTest {
 
                 expectedRecordsCounter.countDown()
             }
+
+            @KinesisListener(BATCH_STREAM)
+            fun handleBatch(events: Map<String, String>) {
+                assertThat(events).hasSize(1)
+                assertThat(events.entries.first().key).isEqualTo(EXPECTED_DATA)
+                assertThat(events.entries.first().value).isEqualTo(EXPECTED_METADATA)
+
+                expectedRecordsCounter.countDown()
+            }
         }
     }
 
@@ -47,6 +56,7 @@ class KotlinListenerTest {
         val dynamodb = Containers.dynamoDb()
 
         const val STREAM = "foo-event-stream"
+        const val BATCH_STREAM = "any-batch-stream"
         const val EXPECTED_DATA = "my-data"
         const val EXPECTED_METADATA = "my-metadata"
 
@@ -57,6 +67,16 @@ class KotlinListenerTest {
     fun `should send and receive events`() {
         expectedRecordsCounter = CountDownLatch(1)
         outbound.send(STREAM, Record(EXPECTED_DATA, EXPECTED_METADATA))
+
+        val recordsProcessed = waitForRecordsToBeProcessed()
+
+        assertThat(recordsProcessed).isTrue()
+    }
+
+    @Test
+    fun `should send and receive events in a batch`() {
+        expectedRecordsCounter = CountDownLatch(1)
+        outbound.send(BATCH_STREAM, Record(EXPECTED_DATA, EXPECTED_METADATA))
 
         val recordsProcessed = waitForRecordsToBeProcessed()
 
