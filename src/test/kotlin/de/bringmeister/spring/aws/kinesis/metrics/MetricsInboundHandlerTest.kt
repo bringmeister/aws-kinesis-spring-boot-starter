@@ -31,7 +31,7 @@ class MetricsInboundHandlerTest {
     fun `should time calls to delegate`() {
 
         val tags = Tags.of("test", "should time calls to delegate")
-        whenever(mockTagsProvider.inboundTags("test", record, context, null)).thenReturn(tags)
+        whenever(mockTagsProvider.inboundTags("test", context, null)).thenReturn(tags)
 
         handler.handleRecord(record, context)
 
@@ -43,7 +43,7 @@ class MetricsInboundHandlerTest {
     fun `should count successful calls to delegate`() {
 
         val tags = Tags.of("test", "should count successful calls to delegate")
-        whenever(mockTagsProvider.inboundTags("test", record, context, null)).thenReturn(tags)
+        whenever(mockTagsProvider.inboundTags("test", context, null)).thenReturn(tags)
 
         handler.handleRecord(record, context)
 
@@ -55,7 +55,7 @@ class MetricsInboundHandlerTest {
     fun `should count failed calls to delegate and bubble exception`() {
 
         val tags = Tags.of("test", "should count failed calls to delegate and bubble exception")
-        whenever(mockTagsProvider.inboundTags("test", record, context, MyException)).thenReturn(tags)
+        whenever(mockTagsProvider.inboundTags("test", context, MyException)).thenReturn(tags)
         whenever(mockDelegate.handleRecord(record, context)).doThrow(MyException)
 
         assertThatCode { handler.handleRecord(record, context) }
@@ -71,7 +71,7 @@ class MetricsInboundHandlerTest {
         val tags = Tags.of("test", "should count deserialization failures, call delegate and bubble exceptions")
         val delegateException = RuntimeException("expected")
         val data = ByteBuffer.allocate(0)
-        whenever(mockTagsProvider.inboundTags("test", null, context, MyException)).thenReturn(tags)
+        whenever(mockTagsProvider.inboundTags("test",  context, MyException)).thenReturn(tags)
         whenever(mockDelegate.handleDeserializationError(MyException, data, context)).doThrow(delegateException)
 
         assertThatCode { handler.handleDeserializationError(MyException, data, context) }

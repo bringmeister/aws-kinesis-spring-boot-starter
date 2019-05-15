@@ -19,15 +19,15 @@ class MetricsOutboundStream(
         val sample = Timer.start(registry)
         try {
             delegate.send(*records)
-            record(sample, records, null)
+            record(sample, null)
         } catch (ex: Throwable) {
-            record(sample, records, ex)
+            record(sample, ex)
             throw ex
         }
     }
 
-    private fun record(sample: Timer.Sample, records: Array<out Record<*, *>>, cause: Throwable?) {
-        val tags = tagsProvider.outboundTags(stream, records, cause)
+    private fun record(sample: Timer.Sample, cause: Throwable?) {
+        val tags = tagsProvider.outboundTags(stream, cause)
         sample.stop(registry.timer(metricName, tags))
     }
 }

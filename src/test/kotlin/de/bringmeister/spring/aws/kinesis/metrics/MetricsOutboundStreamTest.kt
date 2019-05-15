@@ -1,10 +1,6 @@
 package de.bringmeister.spring.aws.kinesis.metrics
 
-import com.nhaarman.mockito_kotlin.doReturn
-import com.nhaarman.mockito_kotlin.doThrow
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockito_kotlin.*
 import de.bringmeister.spring.aws.kinesis.KinesisOutboundStream
 import de.bringmeister.spring.aws.kinesis.Record
 import io.micrometer.core.instrument.Tags
@@ -28,7 +24,7 @@ class MetricsOutboundStreamTest {
     fun `should time calls to delegate`() {
 
         val tags = Tags.of("test", "should time calls to delegate")
-        whenever(mockTagsProvider.outboundTags("test", arrayOf(record), null)).thenReturn(tags)
+        whenever(mockTagsProvider.outboundTags("test",  null)).thenReturn(tags)
 
         handler.send(record)
 
@@ -40,7 +36,7 @@ class MetricsOutboundStreamTest {
     fun `should count successful calls to delegate`() {
 
         val tags = Tags.of("test", "should count successful calls to delegate")
-        whenever(mockTagsProvider.outboundTags("test", arrayOf(record), null)).thenReturn(tags)
+        whenever(mockTagsProvider.outboundTags("test", null)).thenReturn(tags)
 
         handler.send(record)
 
@@ -52,7 +48,7 @@ class MetricsOutboundStreamTest {
     fun `should count failed calls to delegate and bubble exception`() {
 
         val tags = Tags.of("test", "should count failed calls to delegate and bubble exception")
-        whenever(mockTagsProvider.outboundTags("test", arrayOf(record), MyException)).thenReturn(tags)
+        whenever(mockTagsProvider.outboundTags("test", MyException)).thenReturn(tags)
         whenever(mockDelegate.send(record)).doThrow(MyException)
 
         assertThatCode { handler.send(record) }

@@ -26,14 +26,12 @@ open class DefaultKinesisTagsProvider : KinesisTagsProvider {
 
     override fun inboundTags(
         stream: String,
-        record: Record<*, *>?,
         context: KinesisInboundHandler.ExecutionContext,
         cause: Throwable?
     ) = listOf(stream(stream), exception(cause))
 
     override fun outboundTags(
         stream: String,
-        records: Array<out Record<*, *>>,
         cause: Throwable?
     ) = listOf(stream(stream), exception(cause))
 }

@@ -8,7 +8,7 @@ class KinesisListenerProxy(
     method: Method,
     bean: Any,
     override val stream: String
-): KinesisInboundHandler<Any, Any> {
+) : KinesisInboundHandler<Any, Any> {
 
     private val dataClass: Class<Any>
     private val metaClass: Class<Any>
@@ -27,7 +27,7 @@ class KinesisListenerProxy(
                     val kinesisListener = method.getAnnotation(KinesisListener::class.java)
                     this.dataClass = kinesisListener.dataClass.java as Class<Any>
                     this.metaClass = kinesisListener.metaClass.java as Class<Any>
-                    this.listeners = { events -> method.invoke(bean, events)}
+                    this.listeners = { events -> method.invoke(bean, events) }
                     this.batch.set(true)
                 } else {
                     this.dataClass = parameters[0].type as Class<Any>
@@ -54,7 +54,7 @@ class KinesisListenerProxy(
         }
     }
 
-    override fun handleRecords(records: List<Record<Any, Any>>) {
+    override fun handleRecords(records: List<Record<Any, Any>>, context: KinesisInboundHandler.ExecutionContext) {
         try {
             listeners.invoke(records.map { it.data to it.metadata }.toMap())
         } catch (ex: InvocationTargetException) {

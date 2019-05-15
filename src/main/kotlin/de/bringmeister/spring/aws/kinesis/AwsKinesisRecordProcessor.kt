@@ -1,5 +1,15 @@
 package de.bringmeister.spring.aws.kinesis
 
+import com.amazonaws.services.kinesis.clientlibrary.exceptions.InvalidStateException
+import com.amazonaws.services.kinesis.clientlibrary.exceptions.KinesisClientLibNonRetryableException
+import com.amazonaws.services.kinesis.clientlibrary.exceptions.KinesisClientLibRetryableException
+import com.amazonaws.services.kinesis.clientlibrary.exceptions.ShutdownException
+import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorCheckpointer
+import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessor
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.ShutdownReason
+import com.amazonaws.services.kinesis.clientlibrary.types.InitializationInput
+import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput
+import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import software.amazon.kinesis.exceptions.InvalidStateException
@@ -45,16 +55,21 @@ class AwsKinesisRecordProcessor<D, M>(
     }
 
     private fun processRecordsBatch(processRecordsInput: ProcessRecordsInput) {
-        handler.handleRecords(processRecordsInput.records.mapNotNull { toRecord(it)?.first })
+        handler.handleRecords(
+            processRecordsInput.records.mapNotNull { toRecord(it)?.first },
+            toLastExecutionContext(processRecordsInput)
+        )
         checkpoint(processRecordsInput.checkpointer)
     }
 
-    private fun processRecordsSingle(processRecordsInput: ProcessRecordsInput) {
-        for (record in records) {
-            processRecord(record)
+    private fun toLastExecutionContext(processRecordsInput: ProcessRecordsInput) =
+        AwsExecutionContext(processRecordsInput.records.sortedByDescending { it.sequenceNumber }.first().sequenceNumber)
 
+    private fun processRecordsSingle(processRecordsInput: ProcessRecordsInput) {
+        processRecordsInput.records.forEach {
+            processRecord(it)
             if (configuration.checkpointing.strategy == CheckpointingStrategy.RECORD) {
-                checkpoint(checkpointer, record)
+                checkpoint(processRecordsInput.checkpointer, it)
             }
         }
 
@@ -78,7 +93,8 @@ class AwsKinesisRecordProcessor<D, M>(
         } catch (deserializationException: Exception) {
             log.error(
                 "Exception while deserializing record on stream <{}>. [sequenceNumber={}, partitionKey={}]",
-                handler.stream, sequenceNumber, partitionKey, deserializationException
+                handler.stream, sequenceNumber, partitionKey,
+                deserializationException
             )
             try {
                 handler.handleDeserializationError(deserializationException, awsRecord.data().asReadOnlyBuffer(), context)
@@ -113,7 +129,10 @@ class AwsKinesisRecordProcessor<D, M>(
             } catch (e: KinesisClientLibNonRetryableException) {
                 when (e) {
                     is ShutdownException -> log.debug("Checkpointing failed. Application is shutting down.", e)
-                    is InvalidStateException -> log.error("Checkpointing failed. Please check corresponding DynamoDB table.", e)
+                    is InvalidStateException -> log.error(
+                        "Checkpointing failed. Please check corresponding DynamoDB table.",
+                        e
+                    )
                     else -> log.error("Checkpointing failed. Unknown KinesisClientLibNonRetryableException.", e)
                 }
                 break // break retry loop

@@ -4,7 +4,7 @@ import kotlin.reflect.KClass
 
 /**
  * Annotation to mark a Kinesis listener method. The annotation provides the stream
- * name to listen to.
+ * name to listen to. Set dataClass and metaClass when using batching.
  *
  * Usage:
  *
@@ -17,4 +17,8 @@ import kotlin.reflect.KClass
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class KinesisListener(val stream: String, val dataClass: KClass<*> = Any::class, val metaClass: KClass<*> = Any::class)
+annotation class KinesisListener(
+    val stream: String,
+    val dataClass: KClass<*> = Any::class,
+    val metaClass: KClass<*> = Any::class
+)
