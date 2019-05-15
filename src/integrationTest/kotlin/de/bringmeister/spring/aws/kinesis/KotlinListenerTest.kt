@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.junit4.SpringRunner
+import java.time.Instant.now
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -35,11 +36,11 @@ class KotlinListenerTest {
                 expectedRecordsCounter.countDown()
             }
 
-            @KinesisListener(BATCH_STREAM)
-            fun handleBatch(events: Map<String, String>) {
+            @KinesisListener(stream = BATCH_STREAM, dataClass = Data::class, metaClass = Metadata::class)
+            fun handleBatch(events: Map<Data, Metadata>) {
                 assertThat(events).hasSize(1)
-                assertThat(events.entries.first().key).isEqualTo(EXPECTED_DATA)
-                assertThat(events.entries.first().value).isEqualTo(EXPECTED_METADATA)
+                assertThat(events.entries.first().key.data).isEqualTo(EXPECTED_DATA)
+                assertThat(events.entries.first().value.type).isEqualTo(EXPECTED_METADATA)
 
                 expectedRecordsCounter.countDown()
             }
@@ -76,7 +77,8 @@ class KotlinListenerTest {
     @Test
     fun `should send and receive events in a batch`() {
         expectedRecordsCounter = CountDownLatch(1)
-        outbound.send(BATCH_STREAM, Record(EXPECTED_DATA, EXPECTED_METADATA))
+        outbound.send(BATCH_STREAM, Record(Data(EXPECTED_DATA, now().toEpochMilli()),
+                Metadata(EXPECTED_METADATA, now().toEpochMilli())))
 
         val recordsProcessed = waitForRecordsToBeProcessed()
 
@@ -85,4 +87,7 @@ class KotlinListenerTest {
 
     private fun waitForRecordsToBeProcessed() = expectedRecordsCounter.await(1, TimeUnit.MINUTES)
 }
+
+data class Data(val data: String, val date: Long)
+data class Metadata(val type: String, val date: Long)
 

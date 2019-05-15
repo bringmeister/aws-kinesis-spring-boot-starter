@@ -24,8 +24,9 @@ class KinesisListenerProxy(
             1 -> {
                 val type = parameters[0].type
                 if (type.isAssignableFrom(Map::class.java)) {
-                    this.dataClass = Any::class.java
-                    this.metaClass = Any::class.java
+                    val kinesisListener = method.getAnnotation(KinesisListener::class.java)
+                    this.dataClass = kinesisListener.dataClass.java as Class<Any>
+                    this.metaClass = kinesisListener.metaClass.java as Class<Any>
                     this.listeners = { events -> method.invoke(bean, events)}
                     this.batch.set(true)
                 } else {

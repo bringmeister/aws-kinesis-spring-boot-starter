@@ -1,5 +1,7 @@
 package de.bringmeister.spring.aws.kinesis
 
+import kotlin.reflect.KClass
+
 /**
  * Annotation to mark a Kinesis listener method. The annotation provides the stream
  * name to listen to.
@@ -15,4 +17,4 @@ package de.bringmeister.spring.aws.kinesis
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class KinesisListener(val stream: String)
+annotation class KinesisListener(val stream: String, val dataClass: KClass<*> = Any::class, val metaClass: KClass<*> = Any::class)

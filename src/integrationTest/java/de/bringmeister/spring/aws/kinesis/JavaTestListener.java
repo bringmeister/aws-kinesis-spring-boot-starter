@@ -15,7 +15,7 @@ public class JavaTestListener {
         JavaListenerTest.LATCH.countDown();
     }
 
-    @KinesisListener(stream = "foo-event-stream-batch")
+    @KinesisListener(stream = "foo-event-stream-batch", dataClass = FooCreatedEvent.class, metaClass = EventMetadata.class)
     public void handleBatch(Map<FooCreatedEvent, EventMetadata> events) {
         log.info("Java Kinesis listener caught message");
         JavaListenerTest.LATCH.countDown();
