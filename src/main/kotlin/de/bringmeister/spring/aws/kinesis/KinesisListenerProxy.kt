@@ -23,7 +23,7 @@ class KinesisListenerProxy(
         when (parameters.size) {
             1 -> {
                 val type = parameters[0].type
-                if (type.name.contains("map", true)) {
+                if (type.isAssignableFrom(Map::class.java)) {
                     this.dataClass = Void::class.java as Class<Any>
                     this.listeners = { events -> method.invoke(bean, events)}
                     this.batch.set(true)

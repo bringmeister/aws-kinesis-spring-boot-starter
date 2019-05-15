@@ -44,7 +44,7 @@ public class JavaListenerTest {
     @Autowired
     private AwsKinesisOutboundGateway outbound;
 
-    public static CountDownLatch LATCH = new CountDownLatch(1);
+    static CountDownLatch LATCH = new CountDownLatch(1);
 
     @ClassRule
     public static GenericContainer KINESIS_CONTAINER = new GenericContainer("instructure/kinesalite:latest").withCreateContainerCmdModifier(new Consumer<CreateContainerCmd>() {
