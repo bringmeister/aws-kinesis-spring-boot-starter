@@ -81,6 +81,7 @@ dependencies {
     compile "com.amazonaws:amazon-kinesis-client:${versions.kinesis}"
     compile "org.slf4j:slf4j-api"
     compile "javax.validation:validation-api"
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin"
 
     compileOnly "org.springframework.boot:spring-boot-starter-actuator"
 
@@ -89,7 +90,6 @@ dependencies {
     testCompile "org.springframework.boot:spring-boot-starter-test"
     testCompile "com.nhaarman:mockito-kotlin:1.5.0"
     testCompile "org.testcontainers:testcontainers:1.10.1"
-    testCompile "com.fasterxml.jackson.module:jackson-module-kotlin"
     testCompile("org.awaitility:awaitility-kotlin:3.1.6") {
         exclude group: "org.jetbrains.kotlin"
     }
