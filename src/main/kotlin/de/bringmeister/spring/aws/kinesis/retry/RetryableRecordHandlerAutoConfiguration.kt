@@ -1,6 +1,8 @@
 package de.bringmeister.spring.aws.kinesis.retry
 
+import de.bringmeister.spring.aws.kinesis.AwsKinesisAutoConfiguration
 import de.bringmeister.spring.aws.kinesis.RetrySettings
+import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -11,6 +13,7 @@ import javax.validation.constraints.Min
 
 @Configuration
 @EnableConfigurationProperties(RetryableRecordProcessorSettings::class)
+@AutoConfigureBefore(AwsKinesisAutoConfiguration::class)
 class RetryableRecordHandlerAutoConfiguration {
 
     @Bean
