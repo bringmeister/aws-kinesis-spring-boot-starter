@@ -1,21 +1,23 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import org.slf4j.LoggerFactory
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.sts.StsClient
+import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider
+import software.amazon.awssdk.services.sts.model.AssumeRoleRequest
 import java.util.UUID
 
 class STSAssumeRoleSessionCredentialsProviderFactory(
-    private val credentialsProvider: AWSCredentialsProvider,
+    private val credentialsProvider: AwsCredentialsProvider,
     private val settings: AwsKinesisSettings
-) : AWSCredentialsProviderFactory {
+) : AwsCredentialsProviderFactory {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    override fun credentials(roleArnToAssume: String): AWSCredentialsProvider {
+    override fun credentials(roleArnToAssume: String): AwsCredentialsProvider {
         val streamCredentialsProvider = when (val credentials = settings.getRoleCredentials(roleArnToAssume)) {
             null -> {
                 log.debug(
@@ -25,18 +27,24 @@ class STSAssumeRoleSessionCredentialsProviderFactory(
             }
             else -> {
                 log.debug("Using static configuration-provided credentials to assume role <{}>.", roleArnToAssume)
-                AWSStaticCredentialsProvider(BasicAWSCredentials(credentials.accessKey, credentials.secretKey))
+                StaticCredentialsProvider.create(AwsBasicCredentials.create(credentials.accessKey, credentials.secretKey))
             }
         }
-        return STSAssumeRoleSessionCredentialsProvider
-            .Builder(roleArnToAssume, UUID.randomUUID().toString())
-            .withStsClient(
-                AWSSecurityTokenServiceClientBuilder
-                    .standard()
-                    .withRegion(settings.region)
-                    .withCredentials(streamCredentialsProvider)
+        return StsAssumeRoleCredentialsProvider.builder()
+            .refreshRequest(
+                AssumeRoleRequest.builder()
+                    .roleArn(roleArnToAssume)
+                    .roleSessionName(roleSessionName())
+                    .build()
+            )
+            .stsClient(
+                StsClient.builder()
+                    .region(Region.of(settings.region))
+                    .credentialsProvider(streamCredentialsProvider)
                     .build()
             )
             .build()
     }
+
+    private fun roleSessionName(): String = UUID.randomUUID().toString()
 }

@@ -1,10 +1,8 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.AmazonKinesis
-import com.amazonaws.services.kinesis.model.DescribeStreamResult
-import com.amazonaws.services.kinesis.model.LimitExceededException
-import com.amazonaws.services.kinesis.model.ResourceNotFoundException
-import com.amazonaws.services.kinesis.model.StreamDescription
+import com.nhaarman.mockito_kotlin.any
+import com.nhaarman.mockito_kotlin.argThat
+import com.nhaarman.mockito_kotlin.argWhere
 import com.nhaarman.mockito_kotlin.doThrow
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
@@ -12,13 +10,21 @@ import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import org.junit.Test
 import org.mockito.Mockito.doReturn
+import software.amazon.awssdk.services.kinesis.KinesisClient
+import software.amazon.awssdk.services.kinesis.model.CreateStreamRequest
+import software.amazon.awssdk.services.kinesis.model.DescribeStreamRequest
+import software.amazon.awssdk.services.kinesis.model.DescribeStreamResponse
+import software.amazon.awssdk.services.kinesis.model.LimitExceededException
+import software.amazon.awssdk.services.kinesis.model.ResourceNotFoundException
+import software.amazon.awssdk.services.kinesis.model.StreamDescription
+import software.amazon.awssdk.services.kinesis.model.StreamStatus
 import java.lang.IllegalStateException
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.TimeUnit
 
 class StreamInitializerTest {
 
-    private var kinesis: AmazonKinesis = mock { }
+    private var kinesis: KinesisClient = mock { }
     private var settings: AwsKinesisSettings = mock { }
     private var streamInitializer: StreamInitializer = StreamInitializer(kinesis, settings)
 
@@ -26,7 +32,7 @@ class StreamInitializerTest {
     fun `should do nothing if stream already exists`() {
         doReturn(aDescriptionOfAnActiveStream())
             .whenever(kinesis)
-            .describeStream("MY_STREAM")
+            .describeStream(argWhere <DescribeStreamRequest> { it.streamName() == "MY_STREAM" })
 
         doReturn(true)
             .whenever(settings)
@@ -46,14 +52,14 @@ class StreamInitializerTest {
             .whenever(settings)
             .creationTimeoutInMilliSeconds
 
-        whenever(kinesis.describeStream("MY_STREAM"))
-            .doThrow(ResourceNotFoundException("Stream not found!")) // not found exception
+        whenever(kinesis.describeStream(argWhere <DescribeStreamRequest> { it.streamName() == "MY_STREAM" }))
+            .doThrow(ResourceNotFoundException.builder().message("Stream not found!").build()) // not found exception
             .thenReturn(aDescriptionOfAStreamInCreation()) // in creation
             .thenReturn(aDescriptionOfAnActiveStream()) // finally active
 
         streamInitializer.createStreamIfMissing("MY_STREAM")
 
-        verify(kinesis).createStream("MY_STREAM", 1)
+        verify(kinesis).createStream(argWhere <CreateStreamRequest> { it.streamName() == "MY_STREAM" && it.shardCount() == 1 })
     }
 
     @Test(expected = IllegalStateException::class)
@@ -69,7 +75,7 @@ class StreamInitializerTest {
 
         doReturn(aDescriptionOfAStreamInCreation())
             .whenever(kinesis)
-            .describeStream("MY_STREAM")
+            .describeStream(argWhere <DescribeStreamRequest> { it.streamName() == "MY_STREAM" })
 
         streamInitializer.createStreamIfMissing("MY_STREAM")
     }
@@ -88,14 +94,14 @@ class StreamInitializerTest {
         // the barrier will trap our two threads until both have reached
         val barrier = CyclicBarrier(2)
 
-        whenever(kinesis.describeStream("MY_STREAM"))
+        whenever(kinesis.describeStream(argWhere <DescribeStreamRequest> { it.streamName() == "MY_STREAM" }))
             .then {
                 barrier.await() // trap the caller thread
-                throw ResourceNotFoundException("Stream not found!") // not found exception
+                throw ResourceNotFoundException.builder().message("Stream not found!").build() // not found exception
             }
             .then {
                 barrier.await() // trap the caller thread
-                throw ResourceNotFoundException("Stream not found!") // not found exception
+                throw ResourceNotFoundException.builder().message("Stream not found!").build() // not found exception
             }
             .thenReturn(aDescriptionOfAnActiveStream()) // finally active
             .thenReturn(aDescriptionOfAnActiveStream()) // finally active
@@ -103,7 +109,7 @@ class StreamInitializerTest {
         Thread { streamInitializer.createStreamIfMissing("MY_STREAM") }.start()
         streamInitializer.createStreamIfMissing("MY_STREAM")
 
-        verify(kinesis).createStream("MY_STREAM", 1)
+        verify(kinesis).createStream(argWhere <CreateStreamRequest> { it.streamName() == "MY_STREAM" && it.shardCount() == 1 })
     }
 
     @Test(expected = LimitExceededException::class)
@@ -117,13 +123,13 @@ class StreamInitializerTest {
             .whenever(settings)
             .creationTimeoutInMilliSeconds
 
-        doThrow(ResourceNotFoundException("Stream not found!"))
+        doThrow(ResourceNotFoundException.builder().message("Stream not found!").build())
             .whenever(kinesis)
-            .describeStream("MY_STREAM")
+            .describeStream(any<DescribeStreamRequest>())
 
-        doThrow(LimitExceededException("Limit reached!"))
+        doThrow(LimitExceededException.builder().message("Limit reached!").build())
             .whenever(kinesis)
-            .createStream("MY_STREAM", 1)
+            .createStream(any<CreateStreamRequest>())
 
         streamInitializer.createStreamIfMissing("MY_STREAM")
     }
@@ -139,13 +145,13 @@ class StreamInitializerTest {
             .whenever(settings)
             .creationTimeoutInMilliSeconds
 
-        whenever(kinesis.describeStream("MY_STREAM"))
-            .thenThrow(ResourceNotFoundException("Stream not found!"))
-            .thenThrow(ResourceNotFoundException("Stream not found!"))
+        whenever(kinesis.describeStream(any<DescribeStreamRequest>()))
+            .thenThrow(ResourceNotFoundException.builder().message("Stream not found!").build())
+            .thenThrow(ResourceNotFoundException.builder().message("Stream not found!").build())
             .thenReturn(aDescriptionOfAnActiveStream())
 
-        whenever(kinesis.createStream("MY_STREAM", 1))
-            .thenThrow(LimitExceededException("Limit reached!"))
+        whenever(kinesis.createStream(any<CreateStreamRequest>()))
+            .thenThrow(LimitExceededException.builder().message("Limit reached!").build())
             .thenReturn(null)
 
         try {
@@ -157,22 +163,18 @@ class StreamInitializerTest {
 
         // make sure our subsequent call also tries to create the stream,
         // which failed previously
-        verify(kinesis, times(2)).createStream("MY_STREAM", 1)
+        verify(kinesis, times(2)).createStream(argWhere <CreateStreamRequest> { it.streamName() == "MY_STREAM" && it.shardCount() == 1 })
     }
 
-    private fun aDescriptionOfAnActiveStream(): DescribeStreamResult {
-        return DescribeStreamResult()
-            .withStreamDescription(
-                StreamDescription()
-                    .withStreamStatus("ACTIVE")
-            )
+    private fun aDescriptionOfAnActiveStream(): DescribeStreamResponse {
+        return DescribeStreamResponse.builder()
+            .streamDescription(StreamDescription.builder().streamStatus(StreamStatus.ACTIVE).build())
+            .build()
     }
 
-    private fun aDescriptionOfAStreamInCreation(): DescribeStreamResult {
-        return DescribeStreamResult()
-            .withStreamDescription(
-                StreamDescription()
-                    .withStreamStatus("CREATING")
-            )
+    private fun aDescriptionOfAStreamInCreation(): DescribeStreamResponse {
+        return DescribeStreamResponse.builder()
+            .streamDescription(StreamDescription.builder().streamStatus(StreamStatus.CREATING).build())
+            .build()
     }
 }

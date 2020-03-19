@@ -1,64 +1,77 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.InvalidStateException
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.KinesisClientLibNonRetryableException
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.KinesisClientLibRetryableException
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.ShutdownException
-import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorCheckpointer
-import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessor
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.ShutdownReason
-import com.amazonaws.services.kinesis.clientlibrary.types.InitializationInput
-import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput
-import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
-import com.amazonaws.services.kinesis.model.Record as AwsRecord
+import software.amazon.kinesis.exceptions.InvalidStateException
+import software.amazon.kinesis.exceptions.KinesisClientLibDependencyException
+import software.amazon.kinesis.exceptions.KinesisClientLibNonRetryableException
+import software.amazon.kinesis.exceptions.KinesisClientLibRetryableException
+import software.amazon.kinesis.exceptions.ShutdownException
+import software.amazon.kinesis.exceptions.ThrottlingException
+import software.amazon.kinesis.lifecycle.events.InitializationInput
+import software.amazon.kinesis.lifecycle.events.LeaseLostInput
+import software.amazon.kinesis.lifecycle.events.ProcessRecordsInput
+import software.amazon.kinesis.lifecycle.events.ShardEndedInput
+import software.amazon.kinesis.lifecycle.events.ShutdownRequestedInput
+import software.amazon.kinesis.processor.RecordProcessorCheckpointer
+import software.amazon.kinesis.processor.ShardRecordProcessor
+import software.amazon.kinesis.retrieval.KinesisClientRecord
 
 class AwsKinesisRecordProcessor<D, M>(
     private val recordDeserializer: RecordDeserializer<D, M>,
     private val configuration: RecordProcessorConfiguration,
     private val handler: KinesisInboundHandler<D, M>,
     private val publisher: ApplicationEventPublisher
-) : IRecordProcessor {
+) : ShardRecordProcessor {
 
     private val log = LoggerFactory.getLogger(javaClass.name)
 
+    private lateinit var shardId: String
+
     override fun initialize(initializationInput: InitializationInput) {
-        val workerInitializedEvent = WorkerInitializedEvent(handler.stream, initializationInput.shardId)
+        shardId = initializationInput.shardId()
+        val workerInitializedEvent = WorkerInitializedEvent(handler.stream, shardId)
         publisher.publishEvent(workerInitializedEvent)
-        log.info("Kinesis listener initialized: [stream={}, shardId={}]", handler.stream, initializationInput.shardId)
+        log.info("Kinesis listener initialized: [stream={}, shardId={}]", handler.stream, shardId)
     }
 
     override fun processRecords(processRecordsInput: ProcessRecordsInput) {
-        log.trace("Received [{}] records on stream [{}]", processRecordsInput.records.size, handler.stream)
-        for (record in processRecordsInput.records) {
+        val records = processRecordsInput.records()
+        val checkpointer = processRecordsInput.checkpointer()
+        log.trace("Received [{}] records on stream [{}]", records.size, handler.stream)
+        for (record in records) {
 
             processRecord(record)
 
             if (configuration.checkpointing.strategy == CheckpointingStrategy.RECORD) {
-                checkpoint(processRecordsInput.checkpointer, record)
+                checkpoint(checkpointer, record)
             }
         }
 
         if (configuration.checkpointing.strategy == CheckpointingStrategy.BATCH) {
-            checkpoint(processRecordsInput.checkpointer)
+            checkpoint(checkpointer)
         }
     }
 
-    private fun processRecord(awsRecord: AwsRecord) {
-        log.trace("Stream [{}], Seq. No [{}]", handler.stream, awsRecord.sequenceNumber)
-        var context = AwsExecutionContext(awsRecord.sequenceNumber)
+    private fun processRecord(awsRecord: KinesisClientRecord) {
+        val sequenceNumber = awsRecord.sequenceNumber()
+        val partitionKey = awsRecord.partitionKey()
+        log.trace("Stream [{}], Seq. No [{}]", handler.stream, sequenceNumber)
+        val context = AwsExecutionContext(sequenceNumber)
 
         val record: Record<D, M> = try {
             recordDeserializer.deserialize(awsRecord)
         } catch (deserializationException: Exception) {
-            log.error("Exception while deserializing record. [sequenceNumber=${awsRecord.sequenceNumber}, partitionKey=${awsRecord.partitionKey}]", deserializationException)
+            log.error(
+                "Exception while deserializing record on stream <{}>. [sequenceNumber={}, partitionKey={}]",
+                handler.stream, sequenceNumber, partitionKey, deserializationException
+            )
             try {
-                handler.handleDeserializationError(deserializationException, awsRecord.data.asReadOnlyBuffer(), context)
+                handler.handleDeserializationError(deserializationException, awsRecord.data().asReadOnlyBuffer(), context)
             } catch (e: Throwable) {
                 log.error(
                     "Error occurred in handler during call to handleDeserializationError for stream <{}> [sequenceNumber={}, partitionKey={}]",
-                    handler.stream, awsRecord.sequenceNumber, awsRecord.partitionKey, e
+                    handler.stream, sequenceNumber, partitionKey, e
                 )
             }
             return
@@ -67,7 +80,7 @@ class AwsKinesisRecordProcessor<D, M>(
         handler.handleRecord(record, context)
     }
 
-    private fun checkpoint(checkpointer: IRecordProcessorCheckpointer, record: AwsRecord? = null) {
+    private fun checkpoint(checkpointer: RecordProcessorCheckpointer, record: KinesisClientRecord? = null) {
         val maxAttempts = 1 + configuration.checkpointing.maxRetries
         for (attempt in 1..maxAttempts) {
             try {
@@ -97,12 +110,13 @@ class AwsKinesisRecordProcessor<D, M>(
         }
     }
 
-    private fun checkpointSingleRecord(checkpointer: IRecordProcessorCheckpointer, record: AwsRecord) {
-        log.debug("Checkpointing record at [{}]", record.sequenceNumber)
-        checkpointer.checkpoint(record)
+    private fun checkpointSingleRecord(checkpointer: RecordProcessorCheckpointer, record: KinesisClientRecord) {
+        val sequenceNumber = record.sequenceNumber()
+        log.debug("Checkpointing record at [{}]", sequenceNumber)
+        checkpointer.checkpoint(sequenceNumber)
     }
 
-    private fun checkpointBatch(checkpointer: IRecordProcessorCheckpointer) {
+    private fun checkpointBatch(checkpointer: RecordProcessorCheckpointer) {
         log.debug("Checkpointing batch")
         checkpointer.checkpoint()
     }
@@ -115,12 +129,18 @@ class AwsKinesisRecordProcessor<D, M>(
         }
     }
 
-    override fun shutdown(shutdownInput: ShutdownInput) {
-        log.info("Shutting down record processor")
-        // Important to checkpoint after reaching end of shard, so we can start processing data from child shards.
-        if (shutdownInput.shutdownReason == ShutdownReason.TERMINATE) {
-            checkpoint(shutdownInput.checkpointer)
-        }
+    override fun leaseLost(leaseLostInput: LeaseLostInput) {
+        log.info("Lease lost for stream <{}>...", handler.stream)
+    }
+
+    override fun shardEnded(shardEndedInput: ShardEndedInput) {
+        log.info("Shard ended for stream <{}>...", handler.stream)
+        checkpoint(shardEndedInput.checkpointer(), null)
+    }
+
+    override fun shutdownRequested(shutdownRequestedInput: ShutdownRequestedInput) {
+        log.info("Shutting down record processor for stream <{}>...", handler.stream)
+        checkpoint(shutdownRequestedInput.checkpointer(), null)
     }
 
     private data class AwsExecutionContext(override val sequenceNumber: String) : KinesisInboundHandler.ExecutionContext

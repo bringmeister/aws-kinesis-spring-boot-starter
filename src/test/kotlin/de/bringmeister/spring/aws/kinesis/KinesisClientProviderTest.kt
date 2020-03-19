@@ -11,7 +11,7 @@ import org.junit.Test
 
 class KinesisClientProviderTest {
 
-    private val credentialsProviderFactory: AWSCredentialsProviderFactory = mock { }
+    private val credentialsProviderFactory: AwsCredentialsProviderFactory = mock { }
     private val settings = settings().withRequired().withDefaults().withProducerFor("my-stream").build()
     private val clientProvider = KinesisClientProvider(credentialsProviderFactory, settings)
 

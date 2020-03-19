@@ -20,7 +20,8 @@ import org.springframework.test.context.ActiveProfiles
         KinesisValidationAutoConfiguration::class
     ],
     properties = [
-        "aws.kinesis.initial-position-in-stream: TRIM_HORIZON"
+        "aws.kinesis.initial-position-in-stream: TRIM_HORIZON",
+        "aws.kinesis.use-legacy-protocol: true"
     ]
 )
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)

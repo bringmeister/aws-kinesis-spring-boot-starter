@@ -1,16 +1,16 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.AmazonKinesis
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import software.amazon.awssdk.services.kinesis.KinesisClient
 
 class AwsKinesisOutboundStreamFactoryTest {
 
-    private val mockClient = mock<AmazonKinesis> { }
+    private val mockClient = mock<KinesisClient> { }
     private val mockClientProvider = mock<KinesisClientProvider> {
         on { clientFor(any()) } doReturn mockClient
     }

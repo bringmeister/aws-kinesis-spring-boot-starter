@@ -4,8 +4,8 @@ buildscript {
     ext {
         versions = [
                 kotlin    : '1.3.30',
-                kinesis   : '1.9.3',
-                awsSdk    : '1.11.438'
+                kinesisClient: '2.2.9',
+                awsSdk    : '2.10.66'
         ]
     }
 
@@ -14,8 +14,8 @@ buildscript {
 
     ext.allRepositories = {
         mavenLocal()
-        jcenter()
         mavenCentral()
+        jcenter()
     }
 
     repositories(allRepositories)
@@ -69,16 +69,17 @@ configurations {
 dependencyManagement {
     imports {
         mavenBom SpringBootPlugin.BOM_COORDINATES
+        mavenBom "software.amazon.awssdk:bom:${versions.awsSdk}"
     }
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${versions.kotlin}"
-    compile "org.jetbrains.kotlin:kotlin-reflect:${versions.kotlin}"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    compile "org.jetbrains.kotlin:kotlin-reflect"
     compile "org.springframework.boot:spring-boot-autoconfigure"
     compile "org.springframework.boot:spring-boot-configuration-processor"
-    compile "com.amazonaws:aws-java-sdk-sts:${versions.awsSdk}"
-    compile "com.amazonaws:amazon-kinesis-client:${versions.kinesis}"
+    compile "software.amazon.awssdk:sts"
+    compile "software.amazon.kinesis:amazon-kinesis-client:${versions.kinesisClient}"
     compile "org.slf4j:slf4j-api"
     compile "javax.validation:validation-api"
     compile "com.fasterxml.jackson.module:jackson-module-kotlin"
@@ -123,14 +124,14 @@ jacocoTestReport {
         html.enabled = true
     }
 
-    afterEvaluate {
-        classDirectories = files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                "**/WorkerFactory**",
-                "**/local/**"
-            ])
-        })
-    }
+//    afterEvaluate {
+//        classDirectories = files(classDirectories.files.collect {
+//            fileTree(dir: it, exclude: [
+//                "**/WorkerFactory**",
+//                "**/local/**"
+//            ])
+//        })
+//    }
 }
 
 coveralls {

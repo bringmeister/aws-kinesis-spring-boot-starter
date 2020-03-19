@@ -1,9 +1,9 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream
-import com.amazonaws.services.kinesis.metrics.interfaces.MetricsLevel
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.validation.annotation.Validated
+import software.amazon.kinesis.common.InitialPositionInStream
+import software.amazon.kinesis.metrics.MetricsLevel
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import javax.validation.constraints.Min
@@ -21,6 +21,18 @@ class AwsKinesisSettings {
     var iamRoleToAssume: String? = null // Example: role_name
 
     var checkpointing = CheckpointingSettings()
+
+    /**
+     * If enabled, clients explicitly use HTTP/1.1 protocol as well as polling retrieval
+     * strategy as opposed to the defaults HTTP/2 and fan-out. Use as fallback
+     * for integration test scenarios until containerized Kinesis implementations support
+     * fan-out.
+     *
+     * @see [software.amazon.kinesis.common.KinesisClientUtil.adjustKinesisClientBuilder]
+     * @see [software.amazon.kinesis.retrieval.polling.PollingConfig]
+     * @see https://github.com/localstack/localstack/issues/893
+     */
+    var useLegacyProtocol: Boolean = true
 
     var kinesisUrl: String? = null // Example: http://localhost:14567
         get() {

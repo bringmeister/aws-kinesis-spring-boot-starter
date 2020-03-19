@@ -2,8 +2,8 @@ package de.bringmeister.spring.aws.kinesis
 
 import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.ObjectMapper
+import software.amazon.kinesis.retrieval.KinesisClientRecord
 import java.nio.charset.Charset
-import java.util.*
 
 class ObjectMapperRecordDeserializerFactory(
     private val objectMapper: ObjectMapper
@@ -23,12 +23,12 @@ class ObjectMapperRecordDeserializerFactory(
         private val type: JavaType
     ) : RecordDeserializer<D, M> {
 
-        override fun deserialize(awsRecord: com.amazonaws.services.kinesis.model.Record): Record<D, M> {
+        override fun deserialize(awsRecord: KinesisClientRecord): Record<D, M> {
             val json = Charset.forName("UTF-8")
-                .decode(awsRecord.data.asReadOnlyBuffer())
+                .decode(awsRecord.data().asReadOnlyBuffer())
                 .toString()
             val record = objectMapper.readValue<Record<D, M>>(json, type)
-            val partitionKey = awsRecord.partitionKey ?: ""
+            val partitionKey = awsRecord.partitionKey() ?: ""
 
             return Record(record.data, record.metadata, partitionKey)
         }

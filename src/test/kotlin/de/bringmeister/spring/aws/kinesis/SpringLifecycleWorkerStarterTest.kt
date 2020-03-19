@@ -1,6 +1,5 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
 import com.nhaarman.mockito_kotlin.doAnswer
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
@@ -8,6 +7,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
 import org.junit.Test
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory
+import software.amazon.kinesis.coordinator.Scheduler
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
@@ -95,7 +95,7 @@ class SpringLifecycleWorkerStarterTest {
             .untilAsserted { assertThat(thread.isAlive).isFalse() }
     }
 
-    private fun mockWorkerRunnable(lambda: () -> Unit): Worker {
+    private fun mockWorkerRunnable(lambda: () -> Unit): Scheduler {
         return mock {
             on { run() } doAnswer { lambda.invoke() }
         }

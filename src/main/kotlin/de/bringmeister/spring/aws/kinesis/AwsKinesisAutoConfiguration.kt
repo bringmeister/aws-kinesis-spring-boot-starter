@@ -1,7 +1,5 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
@@ -12,6 +10,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
+import software.amazon.awssdk.core.SdkSystemSetting
 
 @Configuration
 @AutoConfigureAfter(name = ["org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration"])
@@ -21,26 +22,24 @@ class AwsKinesisAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     fun clientConfigFactory(
-        credentialsProvider: AWSCredentialsProvider,
-        awsCredentialsProviderFactory: AWSCredentialsProviderFactory,
+        credentialsProvider: AwsCredentialsProvider,
+        awsCredentialsProviderFactory: AwsCredentialsProviderFactory,
         kinesisSettings: AwsKinesisSettings
-    ): ClientConfigFactory {
-
-        return DefaultClientConfigFactory(credentialsProvider, awsCredentialsProviderFactory, kinesisSettings)
+    ): ClientConfigCustomizerFactory {
+        return SettingsClientConfigCustomizerFactory(credentialsProvider, awsCredentialsProviderFactory, kinesisSettings)
     }
 
     @Bean
     @ConditionalOnMissingBean
-    fun credentialsProvider(settings: AwsKinesisSettings) =
-        DefaultAWSCredentialsProviderChain() as AWSCredentialsProvider
+    fun credentialsProvider(settings: AwsKinesisSettings): AwsCredentialsProvider =
+        DefaultCredentialsProvider.create()
 
     @Bean
     @ConditionalOnMissingBean
     fun credentialsProviderFactory(
         kinesisSettings: AwsKinesisSettings,
-        credentialsProvider: AWSCredentialsProvider
-    ): AWSCredentialsProviderFactory {
-
+        credentialsProvider: AwsCredentialsProvider
+    ): AwsCredentialsProviderFactory {
         return STSAssumeRoleSessionCredentialsProviderFactory(credentialsProvider, kinesisSettings)
     }
 
@@ -59,10 +58,10 @@ class AwsKinesisAutoConfiguration {
     @ConditionalOnMissingBean
     @ConditionalOnBean(ObjectMapper::class)
     fun workerFactory(
-        clientConfigFactory: ClientConfigFactory,
+        customizerFactory: ClientConfigCustomizerFactory,
         settings: AwsKinesisSettings,
         applicationEventPublisher: ApplicationEventPublisher
-    ) = WorkerFactory(clientConfigFactory, settings, applicationEventPublisher)
+    ) = WorkerFactory(customizerFactory, settings, applicationEventPublisher)
 
     @Bean
     @ConditionalOnMissingBean
@@ -73,7 +72,7 @@ class AwsKinesisAutoConfiguration {
     @ConditionalOnMissingBean
     fun kinesisClientProvider(
         awsKinesisSettings: AwsKinesisSettings,
-        awsCredentialsProviderFactory: AWSCredentialsProviderFactory
+        awsCredentialsProviderFactory: AwsCredentialsProviderFactory
     ) = KinesisClientProvider(awsCredentialsProviderFactory, awsKinesisSettings)
 
     @Bean
@@ -126,7 +125,7 @@ class AwsKinesisAutoConfiguration {
         kinesisClientProvider: KinesisClientProvider,
         kinesisSettings: AwsKinesisSettings
     ): StreamInitializer {
-        System.setProperty("com.amazonaws.sdk.disableCbor", "1")
+        System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false")
         val kinesisClient = kinesisClientProvider.defaultClient()
         return StreamInitializer(kinesisClient, kinesisSettings)
     }

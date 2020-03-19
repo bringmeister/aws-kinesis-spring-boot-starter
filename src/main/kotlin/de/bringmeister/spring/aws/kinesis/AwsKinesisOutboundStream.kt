@@ -17,6 +17,6 @@ class AwsKinesisOutboundStream(
 
         log.trace("Sending {} records to stream [{}]", records.size, stream)
         val result = kinesis.putRecords(request)
-        log.debug("Successfully send {} records [failed: {}]", result.records.size, result.failedRecordCount)
+        log.debug("Successfully send {} records [failed: {}]", result.records().size, result.failedRecordCount())
     }
 }

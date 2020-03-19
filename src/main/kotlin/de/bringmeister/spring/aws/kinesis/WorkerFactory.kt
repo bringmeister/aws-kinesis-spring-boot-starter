@@ -1,27 +1,29 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
-import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder
-import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessor
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.WorkerStateChangeListener
 import org.slf4j.LoggerFactory
+import software.amazon.kinesis.coordinator.Scheduler
+import software.amazon.kinesis.processor.ShardRecordProcessor
 import org.springframework.context.ApplicationEventPublisher
+import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClientBuilder
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
+import software.amazon.awssdk.services.kinesis.KinesisClient
+import software.amazon.kinesis.common.ConfigsBuilder
+import software.amazon.kinesis.common.KinesisClientUtil
+import software.amazon.kinesis.coordinator.WorkerStateChangeListener
 
 open class WorkerFactory(
-    private val clientConfigFactory: ClientConfigFactory,
+    private val clientConfigCustomizerFactory: ClientConfigCustomizerFactory,
     private val settings: AwsKinesisSettings,
     private val applicationEventPublisher: ApplicationEventPublisher
 ) {
 
-    val log = LoggerFactory.getLogger(javaClass)
+    protected val log = LoggerFactory.getLogger(javaClass)
 
-    fun <D, M> worker(handler: KinesisInboundHandler<D, M>, recordDeserializer: RecordDeserializer<D, M>): Worker {
+    fun <D, M> worker(handler: KinesisInboundHandler<D, M>, recordDeserializer: RecordDeserializer<D, M>): Scheduler {
 
-        val processorFactory: () -> (IRecordProcessor) = {
-
+        val processorFactory: () -> (ShardRecordProcessor) = {
             val checkpointingConfiguration = CheckpointingConfiguration(
                 strategy = settings.checkpointing.strategy,
                 maxRetries = settings.checkpointing.retry.maxRetries,
@@ -34,48 +36,32 @@ open class WorkerFactory(
             AwsKinesisRecordProcessor(recordDeserializer, configuration, handler, applicationEventPublisher)
         }
 
-        val config = clientConfigFactory.consumerConfig(handler.stream)
-
-        return workerBuilder(handler.stream)
-            .workerStateChangeListener { nextState ->
-                when (nextState) {
-                    WorkerStateChangeListener.WorkerState.STARTED -> {
-                        handler.ready()
+        val customizer = clientConfigCustomizerFactory.customizerFor(handler.stream)
+        val defaults = ConfigsBuilder(
+            handler.stream,
+            customizer.applicationName(),
+            customizer.customize(KinesisAsyncClient.builder()).build(),
+            customizer.customize(DynamoDbAsyncClient.builder()).build(),
+            customizer.customize(CloudWatchAsyncClient.builder()).build(),
+            customizer.workerIdentifier(),
+            processorFactory
+        )
+        return Scheduler(
+            customizer.customize(defaults.checkpointConfig()),
+            customizer.customize(defaults.coordinatorConfig()
+                .workerStateChangeListener { nextState ->
+                    when (nextState) {
+                        WorkerStateChangeListener.WorkerState.STARTED -> { handler.ready() }
+                        WorkerStateChangeListener.WorkerState.SHUT_DOWN -> { handler.shutdown() }
+                        else -> { }
                     }
-                    WorkerStateChangeListener.WorkerState.SHUT_DOWN -> {
-                        handler.shutdown()
-                    }
-                    else -> { }
                 }
-            }
-            .config(config)
-            .recordProcessorFactory(processorFactory)
-            .kinesisClient(
-                AmazonKinesisClientBuilder
-                    .standard()
-                    .withCredentials(config.kinesisCredentialsProvider)
-                    .withClientConfiguration(config.kinesisClientConfiguration)
-                    .withEndpointConfiguration(EndpointConfiguration(config.kinesisEndpoint, settings.region))
-                    .build()
-            )
-            .dynamoDBClient(
-                AmazonDynamoDBClientBuilder
-                    .standard()
-                    .withCredentials(config.dynamoDBCredentialsProvider)
-                    .withClientConfiguration(config.dynamoDBClientConfiguration)
-                    .withEndpointConfiguration(EndpointConfiguration(config.dynamoDBEndpoint, settings.region))
-                    .build()
-            )
-            .cloudWatchClient(
-                AmazonCloudWatchClientBuilder
-                    .standard()
-                    .withCredentials(config.cloudWatchCredentialsProvider)
-                    .withClientConfiguration(config.cloudWatchClientConfiguration)
-                    .withRegion(settings.region)
-                    .build()
-            )
-            .build()
+            ),
+            customizer.customize(defaults.leaseManagementConfig()),
+            customizer.customize(defaults.lifecycleConfig()),
+            customizer.customize(defaults.metricsConfig()),
+            customizer.customize(defaults.processorConfig()),
+            customizer.customize(defaults.retrievalConfig())
+        )
     }
-
-    protected open fun workerBuilder(streamName: String): Worker.Builder = Worker.Builder()
 }

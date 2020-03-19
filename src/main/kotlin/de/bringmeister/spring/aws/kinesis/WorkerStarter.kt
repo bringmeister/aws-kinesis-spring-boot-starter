@@ -1,7 +1,7 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
+import software.amazon.kinesis.coordinator.Scheduler
 
 interface WorkerStarter {
-    fun startWorker(stream: String, worker: Worker)
+    fun startWorker(stream: String, worker: Scheduler)
 }

@@ -1,6 +1,5 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream
 import de.bringmeister.spring.aws.kinesis.ConfigurationPropertiesBuilder.Companion.builder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
@@ -11,6 +10,7 @@ import org.springframework.boot.context.properties.bind.BindException
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
+import software.amazon.kinesis.common.InitialPositionInStream
 import java.time.Duration
 
 @RunWith(SpringRunner::class)

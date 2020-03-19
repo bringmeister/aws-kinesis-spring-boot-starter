@@ -1,5 +1,7 @@
 package de.bringmeister.spring.aws.kinesis
 
+import software.amazon.awssdk.regions.Region
+
 class AwsKinesisSettingsTestFactory {
 
     var settings: AwsKinesisSettings? = null

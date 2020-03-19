@@ -1,7 +1,5 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.AmazonKinesis
-import com.amazonaws.services.kinesis.model.PutRecordsRequest
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.anyVararg
 import com.nhaarman.mockito_kotlin.argumentCaptor
@@ -12,6 +10,8 @@ import com.nhaarman.mockito_kotlin.verifyZeroInteractions
 import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import software.amazon.awssdk.services.kinesis.KinesisClient
+import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
 import javax.validation.ValidationException
 import javax.validation.Validator
 
@@ -31,14 +31,14 @@ class AwsKinesisOutboundGatewayTest {
     @Test
     fun `should create and send kinesis request`() {
         val request = mock<PutRecordsRequest> { }
-        val producer = mock<AmazonKinesis> { }
+        val producer = mock<KinesisClient> { }
 
         val streamName = "some-stream-name"
         whenever(requestFactory.request(eq(streamName), any<Record<FooCreatedEvent, EventMetadata>>())).thenReturn(
             request
         )
         whenever(clientProvider.clientFor(streamName)).thenReturn(producer)
-        whenever(producer.putRecords(any())).thenReturn(mock { })
+        whenever(producer.putRecords(any<PutRecordsRequest>())).thenReturn(mock { })
 
         val event = FooCreatedEvent("any-value")
         val metadata = mock<EventMetadata> { }
@@ -71,7 +71,7 @@ class AwsKinesisOutboundGatewayTest {
         val streamName = "some-stream-name"
         val invalidEvent = FooCreatedEvent(foo = "")
         val request = mock<PutRecordsRequest> { }
-        val producer = mock<AmazonKinesis> { }
+        val producer = mock<KinesisClient> { }
         val outboundGatewayWithoutValidator =
             AwsKinesisOutboundGateway(
                 clientProvider,
@@ -82,7 +82,7 @@ class AwsKinesisOutboundGatewayTest {
             request
         )
         whenever(clientProvider.clientFor(streamName)).thenReturn(producer)
-        whenever(producer.putRecords(any())).thenReturn(mock { })
+        whenever(producer.putRecords(any<PutRecordsRequest>())).thenReturn(mock { })
 
         outboundGatewayWithoutValidator.send(streamName, Record(invalidEvent, mock<EventMetadata> { }))
 

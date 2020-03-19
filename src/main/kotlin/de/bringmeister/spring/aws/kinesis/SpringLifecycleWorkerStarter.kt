@@ -1,8 +1,8 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
 import org.slf4j.LoggerFactory
 import org.springframework.context.SmartLifecycle
+import software.amazon.kinesis.coordinator.Scheduler
 import java.time.Duration
 import java.util.WeakHashMap
 import java.util.concurrent.Callable
@@ -28,13 +28,13 @@ class SpringLifecycleWorkerStarter(
     }
 
     private val started = AtomicBoolean(!delayWorkerStartUntilComponentStarted)
-    private val delayedStart = mutableMapOf<String, Worker>()
+    private val delayedStart = mutableMapOf<String, Scheduler>()
 
     /**
      * Only keep workers that are referenced elsewhere.
      * Workers that shut down externally are automatically removed.
      */
-    private val workers = WeakHashMap<Worker, String>()
+    private val workers = WeakHashMap<Scheduler, String>()
 
     override fun getPhase(): Int = KINESIS_PHASE
 
@@ -96,12 +96,12 @@ class SpringLifecycleWorkerStarter(
         log.info("Kinesis worker shutdown phase completed.")
     }
 
-    private fun startWorkerDelayed(stream: String, worker: Worker) {
+    private fun startWorkerDelayed(stream: String, worker: Scheduler) {
         log.debug("Start of Kinesis worker for stream <{}> is delayed until Spring application is fully loaded.", stream)
         delayedStart[stream] = worker
     }
 
-    private fun startWorkerNow(stream: String, worker: Worker) {
+    private fun startWorkerNow(stream: String, worker: Scheduler) {
         log.debug("Starting Kinesis worker for stream <{}>...", stream)
         threadFactory.newThread(worker)
             .apply { name = "worker-$stream" }
@@ -111,7 +111,7 @@ class SpringLifecycleWorkerStarter(
     }
 
     @Synchronized
-    override fun startWorker(stream: String, worker: Worker) {
+    override fun startWorker(stream: String, worker: Scheduler) {
         when (started.get()) {
             true -> startWorkerNow(stream, worker)
             false -> startWorkerDelayed(stream, worker)
