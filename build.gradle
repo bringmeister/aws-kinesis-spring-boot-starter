@@ -69,7 +69,6 @@ configurations {
 dependencyManagement {
     imports {
         mavenBom SpringBootPlugin.BOM_COORDINATES
-        mavenBom "software.amazon.awssdk:bom:${versions.awsSdk}"
     }
 }
 
@@ -78,7 +77,7 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-reflect"
     compile "org.springframework.boot:spring-boot-autoconfigure"
     compile "org.springframework.boot:spring-boot-configuration-processor"
-    compile "software.amazon.awssdk:sts"
+    compile "software.amazon.awssdk:sts:${versions.awsSdk}"
     compile "software.amazon.kinesis:amazon-kinesis-client:${versions.kinesisClient}"
     compile "org.slf4j:slf4j-api"
     compile "javax.validation:validation-api"
@@ -124,14 +123,14 @@ jacocoTestReport {
         html.enabled = true
     }
 
-//    afterEvaluate {
-//        classDirectories = files(classDirectories.files.collect {
-//            fileTree(dir: it, exclude: [
-//                "**/WorkerFactory**",
-//                "**/local/**"
-//            ])
-//        })
-//    }
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                "**/WorkerFactory**",
+                "**/local/**"
+            ])
+        })
+    }
 }
 
 coveralls {
