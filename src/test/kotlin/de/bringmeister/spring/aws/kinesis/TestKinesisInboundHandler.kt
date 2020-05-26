@@ -7,7 +7,7 @@ internal class TestKinesisInboundHandler : KinesisInboundHandler<Any, Any> {
     override fun dataType() = Any::class.java
     override fun metaType() = Any::class.java
 
-    class TestExecutionContext : KinesisInboundHandler.ExecutionContext {
+    class TestExecutionContext(
         override val sequenceNumber: String = "any"
-    }
+    ) : KinesisInboundHandler.ExecutionContext
 }
