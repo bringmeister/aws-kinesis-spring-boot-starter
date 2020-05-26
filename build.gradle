@@ -145,3 +145,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
         jvmTarget = "1.8"
     }
 }
+
+tasks.named('wrapper') {
+    distributionType = Wrapper.DistributionType.ALL
+}
