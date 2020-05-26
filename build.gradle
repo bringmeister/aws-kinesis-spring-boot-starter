@@ -124,7 +124,7 @@ jacocoTestReport {
     }
 
     afterEvaluate {
-        classDirectories = files(classDirectories.files.collect {
+        classDirectories.from = files(classDirectories.files.collect {
             fileTree(dir: it, exclude: [
                 "**/WorkerFactory**",
                 "**/local/**"
@@ -144,4 +144,8 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+}
+
+tasks.named('wrapper') {
+    distributionType = Wrapper.DistributionType.ALL
 }
