@@ -37,8 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         KinesisMetricsAutoConfiguration.class
     },
     properties = {
-        "aws.kinesis.initial-position-in-stream: TRIM_HORIZON",
-        "aws.kinesis.use-legacy-protocol: true"
+        "aws.kinesis.initial-position-in-stream: TRIM_HORIZON"
     }
 )
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)

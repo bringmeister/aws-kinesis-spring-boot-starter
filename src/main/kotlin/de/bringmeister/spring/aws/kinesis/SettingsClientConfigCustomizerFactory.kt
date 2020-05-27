@@ -14,6 +14,7 @@ import software.amazon.kinesis.leases.LeaseManagementConfig
 import software.amazon.kinesis.metrics.MetricsConfig
 import software.amazon.kinesis.metrics.MetricsLevel
 import software.amazon.kinesis.retrieval.RetrievalConfig
+import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 import java.net.InetAddress
 import java.net.URI
@@ -44,11 +45,12 @@ class SettingsClientConfigCustomizerFactory(
                     InitialPositionInStreamExtended.newInitialPosition(kinesisSettings.initialPositionInStream)
                 )
                 .apply {
-                    if (kinesisSettings.useLegacyProtocol) {
-                        log.debug("Using polling strategy on stream <{}>.", config.streamName())
-                        retrievalSpecificConfig(PollingConfig(config.streamName(), config.kinesisClient()))
+                    if (streamSettings.useEnhancedFanOut) {
+                        log.info("Using strategy <Enhanced Fan-Out> on stream <{}>.", config.streamName())
+                        retrievalSpecificConfig(FanOutConfig(config.kinesisClient()))
                     } else {
-                        log.trace("Using KCL default strategy on stream <{}>.", config.streamName())
+                        log.info("Using strategy <Polling> on stream <{}>.", config.streamName())
+                        retrievalSpecificConfig(PollingConfig(config.streamName(), config.kinesisClient()))
                     }
                 }
 
@@ -66,14 +68,12 @@ class SettingsClientConfigCustomizerFactory(
             val credentialsProvider = awsCredentialsProviderFactory.credentials(roleToAssume)
             return builder
                 .applyMutation {
-                    if (kinesisSettings.useLegacyProtocol) {
-                        log.debug("Kinesis client for stream <{}> uses http/1.1.", streamSettings.streamName)
-                        it.httpClientBuilder(
-                            NettyNioAsyncHttpClient.builder().protocol(Protocol.HTTP1_1)
-                        )
-                    } else {
+                    if (streamSettings.useEnhancedFanOut) {
                         log.trace("Kinesis client for stream <{}> uses KCL defaults.", streamSettings.streamName)
                         KinesisClientUtil.adjustKinesisClientBuilder(it)
+                    } else {
+                        log.debug("Kinesis client for stream <{}> uses http/1.1.", streamSettings.streamName)
+                        it.httpClientBuilder(NettyNioAsyncHttpClient.builder().protocol(Protocol.HTTP1_1))
                     }
                 }
                 .credentialsProvider(credentialsProvider)

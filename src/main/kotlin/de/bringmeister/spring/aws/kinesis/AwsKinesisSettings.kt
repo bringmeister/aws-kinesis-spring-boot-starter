@@ -22,18 +22,6 @@ class AwsKinesisSettings {
 
     var checkpointing = CheckpointingSettings()
 
-    /**
-     * If enabled, clients explicitly use HTTP/1.1 protocol as well as polling retrieval
-     * strategy as opposed to the defaults HTTP/2 and fan-out. Use as fallback
-     * for integration test scenarios until containerized Kinesis implementations support
-     * fan-out.
-     *
-     * @see [software.amazon.kinesis.common.KinesisClientUtil.adjustKinesisClientBuilder]
-     * @see [software.amazon.kinesis.retrieval.polling.PollingConfig]
-     * @see https://github.com/localstack/localstack/issues/893
-     */
-    var useLegacyProtocol: Boolean = true
-
     var kinesisUrl: String? = null // Example: http://localhost:14567
         get() {
             return field ?: return if (::region.isInitialized) {
@@ -116,6 +104,20 @@ class StreamSettings {
 
     @NotNull
     lateinit var iamRoleToAssume: String
+
+    /**
+     * AWS Kinesis Starter, as opposed to AWS SDK, uses HTTP/1.1 protocol as well as polling
+     * retrieval strategy by default. Setting this property to `true` enables
+     * HTTP/2 and fan-out. For integration test scenarios this property has to be set to `false`
+     * until containerized Kinesis implementations support fan-out.
+     *
+     * Enabling enhanced fan-out incurs additional cost. Disabled by default.
+     *
+     * @see [software.amazon.kinesis.common.KinesisClientUtil.adjustKinesisClientBuilder]
+     * @see [software.amazon.kinesis.retrieval.polling.PollingConfig]
+     * @see https://github.com/localstack/localstack/issues/893
+     */
+    var useEnhancedFanOut: Boolean = false
 
     fun roleArn() = roleArn(awsAccountId, iamRoleToAssume)
 }
