@@ -4,7 +4,7 @@ buildscript {
     ext {
         versions = [
                 kotlin    : '1.3.30',
-                kinesisClient: '2.2.9',
+                kinesisClient: '2.2.10',
                 awsSdk    : '2.10.66'
         ]
     }
