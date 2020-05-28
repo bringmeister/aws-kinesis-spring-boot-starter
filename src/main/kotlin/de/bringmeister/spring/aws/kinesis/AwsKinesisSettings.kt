@@ -105,17 +105,17 @@ class StreamSettings {
 
     /**
      * AWS Kinesis Starter, as opposed to AWS SDK, uses HTTP/1.1 protocol as well as polling
-     * retrieval strategy by default. Setting this property to `true` enables
-     * HTTP/2 and fan-out. For integration test scenarios this property has to be set to `false`
-     * until containerized Kinesis implementations support fan-out.
+     * retrieval strategy by default. Setting this property to `FANOUT` enables
+     * HTTP/2 and fan-out. For integration test scenarios this property has to be set to something
+     * other than fan-out until containerized Kinesis implementations have appropriate support.
      *
-     * Enabling enhanced fan-out incurs additional cost. Disabled by default.
+     * Enabling enhanced fan-out incurs additional cost. Default is polling with prefetching.
      *
      * @see [software.amazon.kinesis.common.KinesisClientUtil.adjustKinesisClientBuilder]
      * @see [software.amazon.kinesis.retrieval.polling.PollingConfig]
      * @see https://github.com/localstack/localstack/issues/893
      */
-    var useEnhancedFanOut: Boolean = false
+    var retrievalStrategy: RetrievalStrategy = RetrievalStrategy.POLLING
 
     /** Driver to be used for exporting metrics. */
     var metricsDriver: MetricsDriver = MetricsDriver.DEFAULT
@@ -127,6 +127,11 @@ class StreamSettings {
     var initialPositionInStream: InitialPositionInStream = InitialPositionInStream.LATEST
 
     fun roleArn() = roleArn(awsAccountId, iamRoleToAssume)
+
+    enum class RetrievalStrategy {
+        POLLING,
+        FANOUT
+    }
 
     enum class MetricsDriver {
         /** Exports metrics using the KCL default; mostly CloudWatch. */

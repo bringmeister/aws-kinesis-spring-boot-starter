@@ -11,7 +11,6 @@ import software.amazon.awssdk.http.Protocol
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClientBuilder
-import software.amazon.awssdk.services.cloudwatch.model.StandardUnit
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClientBuilder
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClientBuilder
 import software.amazon.kinesis.common.InitialPositionInStreamExtended
@@ -21,9 +20,6 @@ import software.amazon.kinesis.coordinator.CoordinatorFactory
 import software.amazon.kinesis.leases.LeaseManagementConfig
 import software.amazon.kinesis.metrics.LogMetricsFactory
 import software.amazon.kinesis.metrics.MetricsConfig
-import software.amazon.kinesis.metrics.MetricsFactory
-import software.amazon.kinesis.metrics.MetricsLevel
-import software.amazon.kinesis.metrics.MetricsScope
 import software.amazon.kinesis.metrics.NullMetricsFactory
 import software.amazon.kinesis.retrieval.RetrievalConfig
 import software.amazon.kinesis.retrieval.fanout.FanOutConfig
@@ -67,12 +63,15 @@ class SettingsClientConfigCustomizerFactory(
                     InitialPositionInStreamExtended.newInitialPosition(streamSettings.initialPositionInStream)
                 )
                 .apply {
-                    if (streamSettings.useEnhancedFanOut) {
-                        log.info("Using strategy <Enhanced Fan-Out> on stream <{}>.", config.streamName())
-                        retrievalSpecificConfig(FanOutConfig(config.kinesisClient()))
-                    } else {
-                        log.info("Using strategy <Polling> on stream <{}>.", config.streamName())
-                        retrievalSpecificConfig(PollingConfig(config.streamName(), config.kinesisClient()))
+                    when (streamSettings.retrievalStrategy) {
+                        StreamSettings.RetrievalStrategy.FANOUT -> {
+                            log.info("Using strategy <Enhanced Fan-Out> on stream <{}>.", config.streamName())
+                            retrievalSpecificConfig(FanOutConfig(config.kinesisClient()))
+                        }
+                        StreamSettings.RetrievalStrategy.POLLING -> {
+                            log.info("Using strategy <Polling> on stream <{}>.", config.streamName())
+                            retrievalSpecificConfig(PollingConfig(config.streamName(), config.kinesisClient()))
+                        }
                     }
                 }
 
@@ -125,12 +124,15 @@ class SettingsClientConfigCustomizerFactory(
             val credentialsProvider = awsCredentialsProviderFactory.credentials(roleToAssume)
             return builder
                 .applyMutation {
-                    if (streamSettings.useEnhancedFanOut) {
-                        log.trace("Kinesis client for stream <{}> uses KCL defaults.", streamSettings.streamName)
-                        KinesisClientUtil.adjustKinesisClientBuilder(it)
-                    } else {
-                        log.debug("Kinesis client for stream <{}> uses http/1.1.", streamSettings.streamName)
-                        it.httpClientBuilder(NettyNioAsyncHttpClient.builder().protocol(Protocol.HTTP1_1))
+                    when (streamSettings.retrievalStrategy) {
+                        StreamSettings.RetrievalStrategy.FANOUT -> {
+                            log.trace("Kinesis client for stream <{}> uses KCL defaults.", streamSettings.streamName)
+                            KinesisClientUtil.adjustKinesisClientBuilder(it)
+                        }
+                        StreamSettings.RetrievalStrategy.POLLING -> {
+                            log.debug("Kinesis client for stream <{}> uses http/1.1.", streamSettings.streamName)
+                            it.httpClientBuilder(NettyNioAsyncHttpClient.builder().protocol(Protocol.HTTP1_1))
+                        }
                     }
                 }
                 .credentialsProvider(credentialsProvider)
