@@ -3,8 +3,11 @@ aws:
     region: local
     kinesis-url: http://localhost:14567
     consumer-group: example-service
-    aws-account-id: "222222222222"
-    iam-role-to-assume: ExampleKinesisRole
     createStreams: true
     dynamo-db-settings:
       url: http://localhost:14568
+    streams:
+      - stream-name: foo-event-stream
+        aws-account-id: "222222222222"
+        iam-role-to-assume: ExampleKinesisRole
+        initial-position-in-stream: TRIM_HORIZON

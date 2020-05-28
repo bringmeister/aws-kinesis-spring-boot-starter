@@ -39,7 +39,7 @@ class InfiniteRetryRecordProcessorIntegrationTest {
         @JvmField
         val dynamodb = Containers.dynamoDb()
 
-        const val STREAM = "infinite-retry-event"
+        const val STREAM = "foo-event-stream"
 
         val processedRecords = mutableListOf<String>()
     }

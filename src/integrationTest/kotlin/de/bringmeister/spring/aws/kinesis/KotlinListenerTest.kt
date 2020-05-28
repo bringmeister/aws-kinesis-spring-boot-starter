@@ -46,7 +46,7 @@ class KotlinListenerTest {
         @JvmField
         val dynamodb = Containers.dynamoDb()
 
-        const val STREAM = "any-stream"
+        const val STREAM = "foo-event-stream"
         const val EXPECTED_DATA = "my-data"
         const val EXPECTED_METADATA = "my-metadata"
 
