@@ -42,10 +42,8 @@ class AwsKinesisSettings {
             }
         }
 
-    var initialPositionInStream = InitialPositionInStream.LATEST
-    var metricsLevel = MetricsLevel.NONE.name
     var createStreams: Boolean = false
-    var creationTimeoutInMilliSeconds = TimeUnit.SECONDS.toMillis(30)
+    var creationTimeout: Duration = Duration.ofSeconds(30)
     var streams: MutableList<StreamSettings> = mutableListOf()
     var roleCredentials: MutableList<RoleCredentials> = mutableListOf()
 
@@ -82,7 +80,7 @@ class RetrySettings {
 
     @Min(0)
     var maxRetries = NO_RETRIES
-    var backoff = Duration.ofSeconds(1)
+    var backoff: Duration = Duration.ofSeconds(1)
 }
 
 class DynamoDbSettings {
@@ -119,7 +117,27 @@ class StreamSettings {
      */
     var useEnhancedFanOut: Boolean = false
 
+    /** Driver to be used for exporting metrics. */
+    var metricsDriver: MetricsDriver = MetricsDriver.DEFAULT
+
+    /** Level of details of exported metrics. */
+    var metricsLevel: MetricsLevel = MetricsLevel.NONE
+
+    /** Initial position in stream. */
+    var initialPositionInStream: InitialPositionInStream = InitialPositionInStream.LATEST
+
     fun roleArn() = roleArn(awsAccountId, iamRoleToAssume)
+
+    enum class MetricsDriver {
+        /** Exports metrics using the KCL default; mostly CloudWatch. */
+        DEFAULT,
+        /** Exports metrics to Micrometer. */
+        MICROMETER,
+        /** Log accumulated metrics upon closure of a dimension under `software.amazon.kinesis.metrics.LogMetricsScope`. */
+        LOGGING,
+        /** Disables metrics export. */
+        NONE
+    }
 }
 
 class RoleCredentials {

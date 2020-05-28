@@ -64,7 +64,7 @@ aws:
     consumer-group: example-service
     aws-account-id: "222222222222"
     iam-role-to-assume: ExampleKinesisRole
-    createStreams: true
+    create-streams: true
     dynamo-db-settings:
       url: http://localhost:14568
 ````
@@ -108,7 +108,7 @@ aws:
 
 By default, `validate` is turned on.
 
-#### Metrics
+#### Starter Metrics
 
 This starter reports metrics about records send and received when `io.micrometer:micrometer-core` is found on classpath.
 This feature can be disable by setting `metrics` flag to `false`:
@@ -126,6 +126,31 @@ The following metrics are recorded and tagged with `stream` and `exception` (def
 
 By default, `metrics` is turned on.
 
+#### KCL Metrics
+
+KCL's own metrics can be reported to one of several systems by setting `aws.kinesis.streams[*].metrics-driver` to one of the following values:
+* `DEFAULT`: Export metrics with KCL.
+* `LOGGING`: Log metrics.
+* `MICROMETER`: Report metrics using Spring's build-in Micrometer.
+* `NONE`: Disables KCL metrics.
+
+Additionally, the metrics level can be adjusted by setting `aws.kinesis.streams[*].metrics-level` to one of the following values
+* `NONE`
+* `SUMMARY`
+* `DETAILED`
+
+```yaml
+aws:
+  kinesis:
+    ...
+    streams:
+      - stream-name: some-stream-name
+        metrics-level: DETAILED
+        metrics-driver: MICROMETER
+```
+
+If nothing is explicitly specified, `DEFAULT` and `NONE` is set.
+
 #### Configuring initial position in stream
 
 You can use one of following values:
@@ -136,7 +161,9 @@ You can use one of following values:
 aws:
   kinesis:
     ...
-    initial-position-in-stream: TRIM_HORIZON
+    streams:
+      - stream-name: some-stream-name
+        initial-position-in-stream: TRIM_HORIZON
 ```
 
 If you don't specify anything, by default, `LATEST` value will be used.

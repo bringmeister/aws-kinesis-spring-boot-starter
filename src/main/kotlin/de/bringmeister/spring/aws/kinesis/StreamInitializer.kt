@@ -50,7 +50,7 @@ class StreamInitializer(
 
     private fun waitForStreamToBecomeActive(streamName: String) {
         log.debug("Waiting for stream [{}] to become active.", streamName)
-        val creationTimeout = now().plusMillis(kinesisSettings.creationTimeoutInMilliSeconds)
+        val creationTimeout = now().plus(kinesisSettings.creationTimeout)
         val describeStreamRequest = DescribeStreamRequest.builder().streamName(streamName).build()
         while (now().isBefore(creationTimeout)) {
             try {

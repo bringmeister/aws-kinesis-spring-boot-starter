@@ -1,7 +1,10 @@
 package de.bringmeister.spring.aws.kinesis
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.micrometer.core.instrument.MeterRegistry
+import org.springframework.beans.factory.ObjectFactory
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -24,9 +27,10 @@ class AwsKinesisAutoConfiguration {
     fun clientConfigFactory(
         credentialsProvider: AwsCredentialsProvider,
         awsCredentialsProviderFactory: AwsCredentialsProviderFactory,
-        kinesisSettings: AwsKinesisSettings
+        kinesisSettings: AwsKinesisSettings,
+        registryProvider: ObjectProvider<MeterRegistry>
     ): ClientConfigCustomizerFactory {
-        return SettingsClientConfigCustomizerFactory(credentialsProvider, awsCredentialsProviderFactory, kinesisSettings)
+        return SettingsClientConfigCustomizerFactory(credentialsProvider, awsCredentialsProviderFactory, kinesisSettings, registryProvider)
     }
 
     @Bean

@@ -1,39 +1,31 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.nhaarman.mockito_kotlin.argWhere
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
-import com.nhaarman.mockito_kotlin.whenever
-import com.nhaarman.mockito_kotlin.withSettings
+import io.micrometer.core.instrument.MeterRegistry
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Before
 import org.junit.Test
 import org.mockito.Answers
-import org.mockito.stubbing.Answer
+import org.springframework.beans.factory.ObjectProvider
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
-import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClientBuilder
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClientBuilder
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClientBuilder
-import software.amazon.awssdk.services.kinesis.KinesisClient
 import software.amazon.kinesis.common.ConfigsBuilder
 import software.amazon.kinesis.common.InitialPositionInStream
+import software.amazon.kinesis.metrics.LogMetricsFactory
 import software.amazon.kinesis.metrics.MetricsLevel
-import software.amazon.kinesis.processor.ShardRecordProcessor
-import software.amazon.kinesis.processor.ShardRecordProcessorFactory
-import software.amazon.kinesis.retrieval.kpl.ExtendedSequenceNumber.LATEST
 import java.net.URI
 
 class SettingsClientConfigCustomizerFactoryTest {
+
+    private val mockRegistryProvider = mock<ObjectProvider<MeterRegistry>> { }
 
     private val credentialsProvider = AnonymousCredentialsProvider.create()
     private val stsCredentialsProvider = DefaultCredentialsProvider.create()
@@ -42,9 +34,9 @@ class SettingsClientConfigCustomizerFactoryTest {
     }
     private val settings = AwsKinesisSettingsTestFactory.settings()
         .withRequired()
-        .withConsumerFor("my-kinesis-stream")
+        .withConsumerFor("my-kinesis-stream", metricsLevel = MetricsLevel.DETAILED, metricsDriver = StreamSettings.MetricsDriver.LOGGING)
         .build()
-    private val customizerFactory = SettingsClientConfigCustomizerFactory(credentialsProvider, credentialsProviderFactory, settings)
+    private val customizerFactory = SettingsClientConfigCustomizerFactory(credentialsProvider, credentialsProviderFactory, settings, mockRegistryProvider)
     private val customizer = customizerFactory.customizerFor("my-kinesis-stream")
     private val defaults = ConfigsBuilder(
         "my-kinesis-stream",
@@ -61,10 +53,13 @@ class SettingsClientConfigCustomizerFactoryTest {
     }
 
     @Test
-    fun `should generate worker identifier to be unique`() {
+    fun `should generate stable worker identifier, unique per instance`() {
         assertThat(customizer.workerIdentifier())
             .isNotBlank()
-            .isNotEqualTo(customizer.workerIdentifier())
+            .isEqualTo(customizer.workerIdentifier())
+
+        assertThat(customizer.workerIdentifier())
+            .isNotEqualTo(customizerFactory.customizerFor("my-kinesis-stream").workerIdentifier())
     }
 
     @Test
@@ -79,7 +74,14 @@ class SettingsClientConfigCustomizerFactoryTest {
     fun `should set metrics level`() {
 
         val config = customizer.customize(defaults.metricsConfig())
-        assertThat(config.metricsLevel()).isEqualTo(MetricsLevel.NONE)
+        assertThat(config.metricsLevel()).isEqualTo(MetricsLevel.DETAILED)
+    }
+
+    @Test
+    fun `should set metrics driver logging`() {
+
+        val config = customizer.customize(defaults.metricsConfig())
+        assertThat(config.metricsFactory()).isInstanceOf(LogMetricsFactory::class.java)
     }
 
     @Test

@@ -1,7 +1,6 @@
 package de.bringmeister.spring.aws.kinesis
 
 import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.argThat
 import com.nhaarman.mockito_kotlin.argWhere
 import com.nhaarman.mockito_kotlin.doThrow
 import com.nhaarman.mockito_kotlin.mock
@@ -19,8 +18,8 @@ import software.amazon.awssdk.services.kinesis.model.ResourceNotFoundException
 import software.amazon.awssdk.services.kinesis.model.StreamDescription
 import software.amazon.awssdk.services.kinesis.model.StreamStatus
 import java.lang.IllegalStateException
+import java.time.Duration
 import java.util.concurrent.CyclicBarrier
-import java.util.concurrent.TimeUnit
 
 class StreamInitializerTest {
 
@@ -48,9 +47,9 @@ class StreamInitializerTest {
             .whenever(settings)
             .createStreams
 
-        doReturn(TimeUnit.SECONDS.toMillis(30))
+        doReturn(Duration.ofSeconds(30))
             .whenever(settings)
-            .creationTimeoutInMilliSeconds
+            .creationTimeout
 
         whenever(kinesis.describeStream(argWhere <DescribeStreamRequest> { it.streamName() == "MY_STREAM" }))
             .doThrow(ResourceNotFoundException.builder().message("Stream not found!").build()) // not found exception
@@ -69,9 +68,9 @@ class StreamInitializerTest {
             .whenever(settings)
             .createStreams
 
-        doReturn(1L)
+        doReturn(Duration.ofMillis(1))
             .whenever(settings)
-            .creationTimeoutInMilliSeconds
+            .creationTimeout
 
         doReturn(aDescriptionOfAStreamInCreation())
             .whenever(kinesis)
@@ -87,9 +86,9 @@ class StreamInitializerTest {
             .whenever(settings)
             .createStreams
 
-        doReturn(TimeUnit.SECONDS.toMillis(30))
+        doReturn(Duration.ofSeconds(30))
             .whenever(settings)
-            .creationTimeoutInMilliSeconds
+            .creationTimeout
 
         // the barrier will trap our two threads until both have reached
         val barrier = CyclicBarrier(2)
@@ -119,9 +118,9 @@ class StreamInitializerTest {
             .whenever(settings)
             .createStreams
 
-        doReturn(TimeUnit.SECONDS.toMillis(30))
+        doReturn(Duration.ofSeconds(30))
             .whenever(settings)
-            .creationTimeoutInMilliSeconds
+            .creationTimeout
 
         doThrow(ResourceNotFoundException.builder().message("Stream not found!").build())
             .whenever(kinesis)
@@ -141,9 +140,9 @@ class StreamInitializerTest {
             .whenever(settings)
             .createStreams
 
-        doReturn(TimeUnit.SECONDS.toMillis(30))
+        doReturn(Duration.ofSeconds(30))
             .whenever(settings)
-            .creationTimeoutInMilliSeconds
+            .creationTimeout
 
         whenever(kinesis.describeStream(any<DescribeStreamRequest>()))
             .thenThrow(ResourceNotFoundException.builder().message("Stream not found!").build())
