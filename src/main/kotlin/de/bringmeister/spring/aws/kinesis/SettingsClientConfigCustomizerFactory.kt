@@ -48,7 +48,7 @@ class SettingsClientConfigCustomizerFactory(
             // @see https://github.com/aws/aws-sdk-java/issues/1106
 
             val prop = System.getProperty(SdkSystemSetting.CBOR_ENABLED.property())
-            if (prop?.toLowerCase(Locale.ROOT) != "false") {
+            if (prop != null && prop.toLowerCase(Locale.ROOT) != "false") {
                 log.warn("AWS CBOR is explicitly set via system property to <{}>, but explicitly disabled via application configuration.", prop)
             }
 
