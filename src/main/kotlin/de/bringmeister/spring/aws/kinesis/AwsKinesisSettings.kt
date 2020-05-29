@@ -42,6 +42,17 @@ class AwsKinesisSettings {
             }
         }
 
+    /**
+     * Disables CBOR support globally for AWS SDK. This is occassionally necessary,
+     * since KCL will sometimes try to parse JSON responses from AWS as CBOR leading to
+     * exception <Illegal length for VALUE_STRING: 2473435388096836386> during
+     * initialization.
+     *
+     * @see https://github.com/aws/aws-sdk-java-v2/issues/1595
+     * @see https://github.com/aws/aws-sdk-java/issues/1106
+     */
+    var disableCbor: Boolean = false
+
     var createStreams: Boolean = false
     var creationTimeout: Duration = Duration.ofSeconds(30)
     var streams: MutableList<StreamSettings> = mutableListOf()

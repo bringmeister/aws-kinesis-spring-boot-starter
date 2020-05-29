@@ -151,6 +151,17 @@ aws:
 
 If nothing is explicitly specified, `DEFAULT` and `NONE` is set.
 
+#### Disable CBOR
+
+Occassionally, [KCL will try to treat JSON responses from AWS as CBOR](https://github.com/aws/aws-sdk-java-v2/issues/1595), causing exceptions during initialization: `Illegal length for VALUE_STRING: 2473435388096836386`.
+
+Additionally, during integration tests CBOR might have to be disabled due to insufficient support by test containers.
+
+To disable CBOR globally for the AWS SDK set `aws.kinesis.disable-cbor: true`.
+Default: `false`
+
+**Note**: This setting applies globally to the whole AWS SDK.
+
 #### Configuring initial position in stream
 
 You can use one of following values:

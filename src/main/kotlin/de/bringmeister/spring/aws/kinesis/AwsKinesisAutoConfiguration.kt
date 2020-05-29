@@ -129,7 +129,6 @@ class AwsKinesisAutoConfiguration {
         kinesisClientProvider: KinesisClientProvider,
         kinesisSettings: AwsKinesisSettings
     ): StreamInitializer {
-        System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false")
         val kinesisClient = kinesisClientProvider.defaultClient()
         return StreamInitializer(kinesisClient, kinesisSettings)
     }

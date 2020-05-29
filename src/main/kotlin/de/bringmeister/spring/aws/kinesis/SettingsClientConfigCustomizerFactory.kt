@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.binder.jvm.ExecutorServiceMetrics
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.ObjectProvider
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.core.SdkSystemSetting
 import software.amazon.awssdk.http.Protocol
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
 import software.amazon.awssdk.regions.Region
@@ -26,6 +27,7 @@ import software.amazon.kinesis.retrieval.fanout.FanOutConfig
 import software.amazon.kinesis.retrieval.polling.PollingConfig
 import java.net.InetAddress
 import java.net.URI
+import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ExecutorService
 
@@ -37,6 +39,23 @@ class SettingsClientConfigCustomizerFactory(
 ) : ClientConfigCustomizerFactory {
 
     private val log = LoggerFactory.getLogger(javaClass)
+
+    init {
+        if (kinesisSettings.disableCbor) {
+            // Kinesis client is failing with <Illegal length for VALUE_STRING: 2473435388096836386>
+            // @see https://github.com/aws/aws-sdk-java-v2/issues/1595
+            // Apparently, the issue also existed in previous KCL 1.x line:
+            // @see https://github.com/aws/aws-sdk-java/issues/1106
+
+            val prop = System.getProperty(SdkSystemSetting.CBOR_ENABLED.property())
+            if (prop?.toLowerCase(Locale.ROOT) != "false") {
+                log.warn("AWS CBOR is explicitly set via system property to <{}>, but explicitly disabled via application configuration.", prop)
+            }
+
+            log.info("Disabling AWS CBOR support. Set `aws.kinesis.disable-cbor: false` in order to use the AWS SDK default.")
+            System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false")
+        }
+    }
 
     override fun customizerFor(streamName: String): ClientConfigCustomizer = SettingsClientConfigCustomizer(streamName)
 

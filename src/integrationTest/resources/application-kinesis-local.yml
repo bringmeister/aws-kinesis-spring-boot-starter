@@ -3,7 +3,8 @@ aws:
     region: local
     kinesis-url: http://localhost:14567
     consumer-group: example-service
-    createStreams: true
+    create-streams: true
+    disable-cbor: true
     dynamo-db-settings:
       url: http://localhost:14568
     streams:
