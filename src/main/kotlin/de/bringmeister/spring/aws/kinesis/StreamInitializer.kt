@@ -1,13 +1,16 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.AmazonKinesis
-import com.amazonaws.services.kinesis.model.DescribeStreamResult
-import com.amazonaws.services.kinesis.model.ResourceNotFoundException
 import org.slf4j.LoggerFactory
+import software.amazon.awssdk.services.kinesis.KinesisClient
+import software.amazon.awssdk.services.kinesis.model.CreateStreamRequest
+import software.amazon.awssdk.services.kinesis.model.DescribeStreamRequest
+import software.amazon.awssdk.services.kinesis.model.DescribeStreamResponse
+import software.amazon.awssdk.services.kinesis.model.ResourceNotFoundException
+import software.amazon.awssdk.services.kinesis.model.StreamStatus
 import java.time.Instant.now
 
 class StreamInitializer(
-    private val kinesis: AmazonKinesis,
+    private val kinesis: KinesisClient,
     private val kinesisSettings: AwsKinesisSettings
 ) {
 
@@ -18,7 +21,9 @@ class StreamInitializer(
     fun createStreamIfMissing(streamName: String, shardCount: Int = 1) {
         if (!activeStreams.contains(streamName)) {
             try {
-                val response = kinesis.describeStream(streamName)
+                val response = kinesis.describeStream(
+                    DescribeStreamRequest.builder().streamName(streamName).build()
+                )
                 if (!streamIsActive(response)) {
                     waitForStreamToBecomeActive(streamName)
                 }
@@ -31,7 +36,9 @@ class StreamInitializer(
                 synchronized(this) {
                     if (streamName !in activeStreams) {
                         log.info("Creating stream [{}]", streamName)
-                        kinesis.createStream(streamName, shardCount)
+                        kinesis.createStream(
+                            CreateStreamRequest.builder().streamName(streamName).shardCount(shardCount).build()
+                        )
                         waitForStreamToBecomeActive(streamName)
                         activeStreams.add(streamName)
                     }
@@ -43,11 +50,12 @@ class StreamInitializer(
 
     private fun waitForStreamToBecomeActive(streamName: String) {
         log.debug("Waiting for stream [{}] to become active.", streamName)
-        val creationTimeout = now().plusMillis(kinesisSettings.creationTimeoutInMilliSeconds)
+        val creationTimeout = now().plus(kinesisSettings.creationTimeout)
+        val describeStreamRequest = DescribeStreamRequest.builder().streamName(streamName).build()
         while (now().isBefore(creationTimeout)) {
             try {
-                val response = kinesis.describeStream(streamName)
-                log.debug("Current stream status: [{}]", response.streamDescription.streamStatus)
+                val response = kinesis.describeStream(describeStreamRequest)
+                log.debug("Current stream status: [{}]", response.streamDescription().streamStatus())
                 if (streamIsActive(response)) {
                     return
                 }
@@ -60,8 +68,8 @@ class StreamInitializer(
         throw IllegalStateException("Stream never became active: $streamName")
     }
 
-    private fun streamIsActive(streamDescription: DescribeStreamResult): Boolean {
-        return "ACTIVE" == streamDescription.streamDescription.streamStatus
+    private fun streamIsActive(streamDescription: DescribeStreamResponse): Boolean {
+        return StreamStatus.ACTIVE == streamDescription.streamDescription().streamStatus()
     }
 
     private fun waitOneSecond() {

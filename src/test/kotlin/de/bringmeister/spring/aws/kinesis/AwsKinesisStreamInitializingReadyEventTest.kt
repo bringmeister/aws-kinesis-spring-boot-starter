@@ -1,6 +1,5 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.types.InitializationInput
 import com.nhaarman.mockito_kotlin.mock
 import de.bringmeister.spring.aws.kinesis.AwsKinesisStreamInitializingReadyEventTest.WorkerInitializedListener
 import org.junit.Assert.assertEquals
@@ -12,6 +11,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import org.springframework.test.context.junit4.SpringRunner
+import software.amazon.kinesis.lifecycle.events.InitializationInput
 import java.util.concurrent.CountDownLatch
 
 @SpringBootTest(classes = [WorkerInitializedListener::class])
@@ -29,7 +29,7 @@ class AwsKinesisStreamInitializingReadyEventTest {
     }
 
     val initializationInput = mock<InitializationInput> {
-        on { shardId }.thenReturn("any-shard")
+        on { shardId() }.thenReturn("any-shard")
     }
 
     val kinesisListener = KinesisListenerProxyFactory(AopProxyUtils()).proxiesFor(handler)[0]

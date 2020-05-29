@@ -1,21 +1,24 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.model.PutRecordsRequest
-import com.amazonaws.services.kinesis.model.PutRecordsRequestEntry
 import com.fasterxml.jackson.databind.ObjectMapper
-import java.nio.ByteBuffer
+import software.amazon.awssdk.core.SdkBytes
+import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest
+import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry
 
 class RequestFactory(private val objectMapper: ObjectMapper) {
 
     fun request(streamName: String, vararg payload: Record<*, *>): PutRecordsRequest {
-        return PutRecordsRequest()
-            .withStreamName(streamName)
-            .withRecords(
+        return PutRecordsRequest.builder()
+            .streamName(streamName)
+            .records(
                 payload.map {
-                    PutRecordsRequestEntry()
-                        .withData(ByteBuffer.wrap(objectMapper.writeValueAsBytes(it)))
-                        .withPartitionKey(it.partitionKey)
+                    val bytes = objectMapper.writeValueAsBytes(it)
+                    PutRecordsRequestEntry.builder()
+                        .data(SdkBytes.fromByteArray(bytes))
+                        .partitionKey(it.partitionKey)
+                        .build()
                 }
             )
+            .build()
     }
 }

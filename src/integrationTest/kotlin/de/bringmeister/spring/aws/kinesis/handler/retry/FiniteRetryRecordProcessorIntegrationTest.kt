@@ -40,7 +40,7 @@ class FiniteRetryRecordProcessorIntegrationTest {
         @JvmStatic
         fun dynamodb() = Containers.dynamoDb()
 
-        const val STREAM = "finite-retry-event"
+        const val STREAM = "foo-event-stream"
         const val MAX_RETRIES = 2
 
         val processedRecords = mutableListOf<String>()

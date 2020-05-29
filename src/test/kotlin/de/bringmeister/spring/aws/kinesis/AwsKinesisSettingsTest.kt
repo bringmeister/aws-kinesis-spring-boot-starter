@@ -1,6 +1,5 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream
 import de.bringmeister.spring.aws.kinesis.ConfigurationPropertiesBuilder.Companion.builder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
@@ -11,6 +10,7 @@ import org.springframework.boot.context.properties.bind.BindException
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
+import software.amazon.kinesis.common.InitialPositionInStream
 import java.time.Duration
 
 @RunWith(SpringRunner::class)
@@ -50,7 +50,6 @@ class AwsKinesisProducerSettingsTest {
         assertThat(settings.region).isEqualTo("eu-central-1")
         assertThat(settings.kinesisUrl).isEqualTo("https://kinesis.eu-central-1.amazonaws.com")
         assertThat(settings.dynamoDbSettings!!.url).isEqualTo("https://dynamodb.eu-central-1.amazonaws.com")
-        assertThat(settings.initialPositionInStream).isEqualTo(InitialPositionInStream.LATEST)
     }
 
     @Test
@@ -70,7 +69,6 @@ class AwsKinesisProducerSettingsTest {
         assertThat(settings.region).isEqualTo("local")
         assertThat(settings.kinesisUrl).isEqualTo(kinesisUrl)
         assertThat(settings.dynamoDbSettings!!.url).isEqualTo(dynamoDbUrl)
-        assertThat(settings.initialPositionInStream).isEqualTo(InitialPositionInStream.TRIM_HORIZON)
     }
 
     @Test(expected = BindException::class)
@@ -100,13 +98,9 @@ class AwsKinesisProducerSettingsTest {
 
     @Test(expected = BindException::class)
     fun `should fail if setting initialPositionInStream is not an enum value`() {
-        val kinesisUrl = "http://localhost:1234/kinesis"
-        val dynamoDbUrl = "http://localhost:1234/dynamodb"
-        builder<AwsKinesisSettings>()
-            .withPrefix("aws.kinesis")
-            .withProperty("region", "local")
-            .withProperty("kinesisUrl", kinesisUrl)
-            .withProperty("dynamoDbSettings.url", dynamoDbUrl)
+        builder<StreamSettings>()
+            .withPrefix("aws.kinesis.streams")
+            .withProperty("streamName", "some-stream")
             .withProperty("initialPositionInStream", "WRONG_VALUE")
             .validateUsing(localValidatorFactoryBean)
             .build()
@@ -141,9 +135,10 @@ class AwsKinesisProducerSettingsTest {
         // reports the <return null> lines and sometimes doesn't.
         val settings = builder<AwsKinesisSettings>()
             .withPrefix("aws.kinesis")
-            .withProperty("initialPositionInStream", "TRIM_HORIZON")
+            .withProperty("create-streams", "true")
             .build()
         assertThat(settings.kinesisUrl).isNull()
         assertThat(settings.dynamoDbSettings).isNull()
+        assertThat(settings.createStreams).isTrue()
     }
 }

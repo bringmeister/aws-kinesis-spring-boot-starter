@@ -1,6 +1,6 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
+import software.amazon.kinesis.coordinator.Scheduler
 import org.slf4j.LoggerFactory
 
 class AwsKinesisInboundGateway(
@@ -23,7 +23,7 @@ class AwsKinesisInboundGateway(
         log.info("Kinesis listener for stream <{}> registered.", handler.stream)
     }
 
-    private fun <D, M> worker(handler: KinesisInboundHandler<D, M>): Worker {
+    private fun <D, M> worker(handler: KinesisInboundHandler<D, M>): Scheduler {
         val recordDeserializer = recordDeserializerFactory.deserializerFor(handler)
         return workerFactory.worker(handler, recordDeserializer)
     }

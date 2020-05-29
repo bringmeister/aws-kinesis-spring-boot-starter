@@ -1,7 +1,7 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.model.Record as AwsRecord
+import software.amazon.kinesis.retrieval.KinesisClientRecord
 
 interface RecordDeserializer<D, M> {
-    fun deserialize(awsRecord: AwsRecord): Record<D, M>
+    fun deserialize(awsRecord: KinesisClientRecord): Record<D, M>
 }

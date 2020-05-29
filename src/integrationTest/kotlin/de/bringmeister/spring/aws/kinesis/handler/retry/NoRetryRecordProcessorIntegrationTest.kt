@@ -39,7 +39,7 @@ class NoRetryRecordProcessorIntegrationTest {
         @JvmField
         val dynamodb = Containers.dynamoDb()
 
-        const val STREAM = "no-retry-event"
+        const val STREAM = "foo-event-stream"
 
         val processedRecords = mutableListOf<String>()
     }

@@ -1,9 +1,9 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream
-import com.amazonaws.services.kinesis.metrics.interfaces.MetricsLevel
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.validation.annotation.Validated
+import software.amazon.kinesis.common.InitialPositionInStream
+import software.amazon.kinesis.metrics.MetricsLevel
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import javax.validation.constraints.Min
@@ -42,10 +42,19 @@ class AwsKinesisSettings {
             }
         }
 
-    var initialPositionInStream = InitialPositionInStream.LATEST
-    var metricsLevel = MetricsLevel.NONE.name
+    /**
+     * Disables CBOR support globally for AWS SDK. This is occassionally necessary,
+     * since KCL will sometimes try to parse JSON responses from AWS as CBOR leading to
+     * exception <Illegal length for VALUE_STRING: 2473435388096836386> during
+     * initialization.
+     *
+     * @see https://github.com/aws/aws-sdk-java-v2/issues/1595
+     * @see https://github.com/aws/aws-sdk-java/issues/1106
+     */
+    var disableCbor: Boolean = false
+
     var createStreams: Boolean = false
-    var creationTimeoutInMilliSeconds = TimeUnit.SECONDS.toMillis(30)
+    var creationTimeout: Duration = Duration.ofSeconds(30)
     var streams: MutableList<StreamSettings> = mutableListOf()
     var roleCredentials: MutableList<RoleCredentials> = mutableListOf()
 
@@ -82,7 +91,7 @@ class RetrySettings {
 
     @Min(0)
     var maxRetries = NO_RETRIES
-    var backoff = Duration.ofSeconds(1)
+    var backoff: Duration = Duration.ofSeconds(1)
 }
 
 class DynamoDbSettings {
@@ -105,7 +114,46 @@ class StreamSettings {
     @NotNull
     lateinit var iamRoleToAssume: String
 
+    /**
+     * AWS Kinesis Starter, as opposed to AWS SDK, uses HTTP/1.1 protocol as well as polling
+     * retrieval strategy by default. Setting this property to `FANOUT` enables
+     * HTTP/2 and fan-out. For integration test scenarios this property has to be set to something
+     * other than fan-out until containerized Kinesis implementations have appropriate support.
+     *
+     * Enabling enhanced fan-out incurs additional cost. Default is polling with prefetching.
+     *
+     * @see [software.amazon.kinesis.common.KinesisClientUtil.adjustKinesisClientBuilder]
+     * @see [software.amazon.kinesis.retrieval.polling.PollingConfig]
+     * @see https://github.com/localstack/localstack/issues/893
+     */
+    var retrievalStrategy: RetrievalStrategy = RetrievalStrategy.POLLING
+
+    /** Driver to be used for exporting metrics. */
+    var metricsDriver: MetricsDriver = MetricsDriver.DEFAULT
+
+    /** Level of details of exported metrics. */
+    var metricsLevel: MetricsLevel = MetricsLevel.NONE
+
+    /** Initial position in stream. */
+    var initialPositionInStream: InitialPositionInStream = InitialPositionInStream.LATEST
+
     fun roleArn() = roleArn(awsAccountId, iamRoleToAssume)
+
+    enum class RetrievalStrategy {
+        POLLING,
+        FANOUT
+    }
+
+    enum class MetricsDriver {
+        /** Exports metrics using the KCL default; mostly CloudWatch. */
+        DEFAULT,
+        /** Exports metrics to Micrometer. */
+        MICROMETER,
+        /** Log accumulated metrics upon closure of a dimension under `software.amazon.kinesis.metrics.LogMetricsScope`. */
+        LOGGING,
+        /** Disables metrics export. */
+        NONE
+    }
 }
 
 class RoleCredentials {

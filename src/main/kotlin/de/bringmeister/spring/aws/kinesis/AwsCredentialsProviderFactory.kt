@@ -1,6 +1,6 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.auth.AWSCredentialsProvider
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 
 /**
  * Every consumer/listener will have its own credentials. Those credentials
@@ -13,6 +13,6 @@ import com.amazonaws.auth.AWSCredentialsProvider
  * One for production and another one for local development with Docker. The local
  * version can be used with the "kinesis-local" profile.
  */
-interface AWSCredentialsProviderFactory {
-    fun credentials(roleArnToAssume: String): AWSCredentialsProvider
+interface AwsCredentialsProviderFactory {
+    fun credentials(roleArnToAssume: String): AwsCredentialsProvider
 }

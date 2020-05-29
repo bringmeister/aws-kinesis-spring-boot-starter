@@ -8,6 +8,7 @@ before_install:
   - chmod +x gradle/wrapper/gradle-wrapper.jar
 
 script:
+  - export AWS_REGION=travis-test
   - ./gradlew clean integrationTest build -i --stacktrace
 
 after_success:

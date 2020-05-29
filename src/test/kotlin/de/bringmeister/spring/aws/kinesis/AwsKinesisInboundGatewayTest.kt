@@ -1,6 +1,5 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.eq
@@ -8,11 +7,12 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import org.junit.Test
+import software.amazon.kinesis.coordinator.Scheduler
 
 class AwsKinesisInboundGatewayTest {
 
     val workerStarter: WorkerStarter = mock { }
-    val worker = mock<Worker> { }
+    val worker = mock<Scheduler> { }
     private val handler = TestKinesisInboundHandler()
     val mockRecordDeserializer = mock<RecordDeserializer<Any, Any>> { }
     val mockRecordDeserializerFactory = mock<RecordDeserializerFactory> {

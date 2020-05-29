@@ -18,9 +18,6 @@ import org.springframework.test.context.ActiveProfiles
         KinesisCreateStreamAutoConfiguration::class,
         KinesisMetricsAutoConfiguration::class,
         KinesisValidationAutoConfiguration::class
-    ],
-    properties = [
-        "aws.kinesis.initial-position-in-stream: TRIM_HORIZON"
     ]
 )
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)

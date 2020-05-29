@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 public class JavaTestListener {
 
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @KinesisListener(stream = "foo-event-stream")
     public void handle(FooCreatedEvent data, EventMetadata metadata) {

@@ -1,12 +1,5 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.KinesisClientLibNonRetryableException
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.KinesisClientLibRetryableException
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.ThrottlingException
-import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorCheckpointer
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.ShutdownReason
-import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput
-import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.nhaarman.mockito_kotlin.any
@@ -25,44 +18,53 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatCode
 import org.junit.Test
 import org.springframework.context.ApplicationEventPublisher
+import software.amazon.kinesis.exceptions.KinesisClientLibNonRetryableException
+import software.amazon.kinesis.exceptions.KinesisClientLibRetryableException
+import software.amazon.kinesis.exceptions.ThrottlingException
+import software.amazon.kinesis.lifecycle.events.LeaseLostInput
+import software.amazon.kinesis.lifecycle.events.ProcessRecordsInput
+import software.amazon.kinesis.lifecycle.events.ShardEndedInput
+import software.amazon.kinesis.lifecycle.events.ShutdownRequestedInput
+import software.amazon.kinesis.processor.RecordProcessorCheckpointer
+import software.amazon.kinesis.retrieval.KinesisClientRecord
 import java.nio.ByteBuffer
 import java.time.Duration
 import java.util.UUID
-import com.amazonaws.services.kinesis.model.Record as KinesisRecord
 
 class AwsKinesisRecordProcessorTest {
 
-    data class ExampleEvent(val data: ExampleData, val metadata: ExampleMetadata)
-    data class ExampleData(val value: String)
-    data class ExampleMetadata(val hash: String)
+    private data class ExampleEvent(val data: ExampleData, val metadata: ExampleMetadata)
+    private data class ExampleData(val value: String)
+    private data class ExampleMetadata(val hash: String)
 
-    class ExampleException : RuntimeException()
+    private class ExampleException : RuntimeException()
 
-    val checkpointMaxRetries = 2
-    val checkpointingBackoff = Duration.ofMillis(1)
-    val exampleConfig =
-        RecordProcessorConfiguration(checkpointing = CheckpointingConfiguration(maxRetries = checkpointMaxRetries, backoff = checkpointingBackoff))
+    private val checkpointMaxRetries = 2
+    private val checkpointingBackoff = Duration.ofMillis(1)
+    private val exampleConfig = RecordProcessorConfiguration(
+        checkpointing = CheckpointingConfiguration(maxRetries = checkpointMaxRetries, backoff = checkpointingBackoff)
+    )
 
-    val mockHandler = mock<KinesisInboundHandler<ExampleData, ExampleMetadata>> {
+    private val mockHandler = mock<KinesisInboundHandler<ExampleData, ExampleMetadata>> {
         on { dataType() } doReturn ExampleData::class.java
         on { metaType() } doReturn ExampleMetadata::class.java
         on { stream } doReturn "any-stream"
     }
 
-    val mockCheckpointer = mock<IRecordProcessorCheckpointer> {}
-    val mockEventPublisher = mock<ApplicationEventPublisher> {}
-    val objectMapper = ObjectMapper().registerModule(KotlinModule())
-    val recordDeserializer = ObjectMapperRecordDeserializerFactory(objectMapper).deserializerFor(mockHandler)
+    private val mockCheckpointer = mock<RecordProcessorCheckpointer> {}
+    private val mockEventPublisher = mock<ApplicationEventPublisher> {}
+    private val objectMapper = ObjectMapper().registerModule(KotlinModule())
+    private val recordDeserializer = ObjectMapperRecordDeserializerFactory(objectMapper).deserializerFor(mockHandler)
 
-    fun recordProcessor(configuration: RecordProcessorConfiguration = exampleConfig): AwsKinesisRecordProcessor<ExampleData, ExampleMetadata> {
+    private fun recordProcessor(configuration: RecordProcessorConfiguration = exampleConfig): AwsKinesisRecordProcessor<ExampleData, ExampleMetadata> {
         return AwsKinesisRecordProcessor(recordDeserializer, configuration, mockHandler, mockEventPublisher)
     }
 
-    val events = listOf(
+    private val events = listOf(
         ExampleEvent(ExampleData("first"), ExampleMetadata("8b04d5e3775d298e78455efc5ca404d5")),
         ExampleEvent(ExampleData("second"), ExampleMetadata("a9f0e61a137d86aa9db53465e0801612"))
     )
-    val eventsAsJson = events.map(this::json)
+    private val eventsAsJson = events.map(this::json)
 
     /* ---- Happy Path ---- */
     @Test
@@ -78,7 +80,7 @@ class AwsKinesisRecordProcessorTest {
     /* ---- Initialization ---- */
     @Test
     fun `should publish event on initialization`() {
-        recordProcessor().initialize(mock { on { shardId } doReturn "any" })
+        recordProcessor().initialize(mock { on { shardId() } doReturn "any" })
 
         val captor = argumentCaptor<WorkerInitializedEvent>()
         verify(mockEventPublisher).publishEvent(captor.capture())
@@ -123,8 +125,8 @@ class AwsKinesisRecordProcessorTest {
 
         recordProcessor(config).processRecords(records)
 
-        for (record in records.records) {
-            verify(mockCheckpointer).checkpoint(record)
+        for (record in records.records()) {
+            verify(mockCheckpointer).checkpoint(record.sequenceNumber())
         }
         verifyNoMoreInteractions(mockCheckpointer)
     }
@@ -144,7 +146,7 @@ class AwsKinesisRecordProcessorTest {
             )
             recordProcessor(config).processRecords(records)
         }
-        verify(mockCheckpointer).checkpoint(records.records[0]) // checkpoint only successful processed record
+        verify(mockCheckpointer).checkpoint(records.records()[0].sequenceNumber()) // checkpoint only successful processed record
         verifyNoMoreInteractions(mockCheckpointer)
     }
 
@@ -174,7 +176,7 @@ class AwsKinesisRecordProcessorTest {
         verify(mockHandler).handleDeserializationError(any(), any(), any())
     }
 
-    class AnyKinesisRetryableException : KinesisClientLibRetryableException("any")
+    private class AnyKinesisRetryableException : KinesisClientLibRetryableException("any")
 
     @Test
     fun `should retry batch checkpointing on KinesisClientLibRetryableException`() {
@@ -194,18 +196,18 @@ class AwsKinesisRecordProcessorTest {
     fun `should retry record checkpointing on KinesisClientLibRetryableException`() {
         val records = recordBatch(eventsAsJson)
 
-        whenever(mockCheckpointer.checkpoint(any<com.amazonaws.services.kinesis.model.Record>()))
+        whenever(mockCheckpointer.checkpoint(any<String>()))
             .doThrow(AnyKinesisRetryableException::class)
             .then { } // stop throwing
 
         val config = RecordProcessorConfiguration(checkpointing = CheckpointingConfiguration(checkpointMaxRetries, checkpointingBackoff, CheckpointingStrategy.RECORD))
         recordProcessor(config).processRecords(records)
 
-        verify(mockCheckpointer, times(2)).checkpoint(records.records[0]) // retry
-        verify(mockCheckpointer).checkpoint(records.records[1])
+        verify(mockCheckpointer, times(2)).checkpoint(records.records()[0].sequenceNumber()) // retry
+        verify(mockCheckpointer).checkpoint(records.records()[1].sequenceNumber())
     }
 
-    class AnyKinesisNonRetryableException : KinesisClientLibNonRetryableException("any")
+    private class AnyKinesisNonRetryableException : KinesisClientLibNonRetryableException("any")
 
     @Test
     fun `should not retry batch checkpointing on KinesisClientLibNonRetryableException`() {
@@ -225,15 +227,15 @@ class AwsKinesisRecordProcessorTest {
     fun `should not retry record checkpointing on KinesisClientLibNonRetryableException`() {
         val records = recordBatch(eventsAsJson)
 
-        whenever(mockCheckpointer.checkpoint(any<com.amazonaws.services.kinesis.model.Record>()))
+        whenever(mockCheckpointer.checkpoint(any<String>()))
             .doAnswer { throw AnyKinesisNonRetryableException() }
             .then { } // stop throwing
 
         val config = RecordProcessorConfiguration(checkpointing = CheckpointingConfiguration(checkpointMaxRetries, checkpointingBackoff, CheckpointingStrategy.RECORD))
         recordProcessor(config).processRecords(records)
 
-        verify(mockCheckpointer).checkpoint(records.records[0])
-        verify(mockCheckpointer).checkpoint(records.records[1])
+        verify(mockCheckpointer).checkpoint(records.records()[0].sequenceNumber())
+        verify(mockCheckpointer).checkpoint(records.records()[1].sequenceNumber())
     }
 
     @Test
@@ -246,19 +248,27 @@ class AwsKinesisRecordProcessorTest {
     }
 
     @Test
-    fun `should checkpoint on resharding`() {
-        val shutdownInput = mock<ShutdownInput> {
-            on { shutdownReason } doReturn ShutdownReason.TERMINATE // re-sharding
-            on { checkpointer } doReturn mockCheckpointer
-        }
-
-        recordProcessor().shutdown(shutdownInput)
-
+    fun `should checkpoint on shutdown request`() {
+        val request = ShutdownRequestedInput.builder().checkpointer(mockCheckpointer).build()
+        recordProcessor().shutdownRequested(request)
         verify(mockCheckpointer).checkpoint()
     }
 
+    @Test
+    fun `should checkpoint on shard ended`() {
+        val request = ShardEndedInput.builder().checkpointer(mockCheckpointer).build()
+        recordProcessor().shardEnded(request)
+        verify(mockCheckpointer).checkpoint()
+    }
+
+    @Test
+    fun `should not error on lease lost`() {
+        val request = LeaseLostInput.builder().build()
+        recordProcessor().leaseLost(request)
+    }
+
     private fun verifyAllEventsAreProcessed() {
-        for (i in 0 until events.size) {
+        for (i in events.indices) {
             val recordCaptor = argumentCaptor<Record<ExampleData, ExampleMetadata>>()
             val contextCaptor = argumentCaptor<KinesisInboundHandler.ExecutionContext>()
             verify(mockHandler, times(events.size)).handleRecord(recordCaptor.capture(), contextCaptor.capture())
@@ -270,10 +280,16 @@ class AwsKinesisRecordProcessorTest {
 
     private fun json(event: ExampleEvent) = objectMapper.writeValueAsString(event)
 
-    fun recordBatch(recordData: List<String>): ProcessRecordsInput {
-        val records = recordData.map { record -> KinesisRecord().withSequenceNumber(UUID.randomUUID().toString()).withData(ByteBuffer.wrap(record.toByteArray())) }
-        return ProcessRecordsInput()
-            .withRecords(records)
-            .withCheckpointer(mockCheckpointer)
+    private fun recordBatch(recordData: List<String>): ProcessRecordsInput {
+        val records = recordData.map { record ->
+            KinesisClientRecord.builder()
+                .sequenceNumber(UUID.randomUUID().toString())
+                .data(ByteBuffer.wrap(record.toByteArray()))
+                .build()
+        }
+        return ProcessRecordsInput.builder()
+            .records(records)
+            .checkpointer(mockCheckpointer)
+            .build()
     }
 }

@@ -1,5 +1,8 @@
 package de.bringmeister.spring.aws.kinesis
 
+import software.amazon.awssdk.regions.Region
+import software.amazon.kinesis.metrics.MetricsLevel
+
 class AwsKinesisSettingsTestFactory {
 
     var settings: AwsKinesisSettings? = null
@@ -27,12 +30,23 @@ class AwsKinesisSettingsTestFactory {
         return this
     }
 
-    fun withConsumerFor(stream: String): AwsKinesisSettingsTestFactory {
+    fun withConsumerFor(
+        stream: String,
+        metricsLevel: MetricsLevel? = null,
+        metricsDriver: StreamSettings.MetricsDriver? = null
+    ): AwsKinesisSettingsTestFactory {
 
         val consumerSettings = StreamSettings()
         consumerSettings.streamName = stream
         consumerSettings.awsAccountId = "100000000042"
         consumerSettings.iamRoleToAssume = "kinesis-user-role"
+
+        if (metricsLevel != null) {
+            consumerSettings.metricsLevel = metricsLevel
+        }
+        if (metricsDriver != null) {
+            consumerSettings.metricsDriver = metricsDriver
+        }
 
         settings!!.streams.add(consumerSettings)
         settings!!.consumerGroup = "my-consumer-group"

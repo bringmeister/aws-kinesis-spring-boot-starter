@@ -16,7 +16,7 @@ import java.time.Duration
 
 class RetryableRecordHandlerTest {
 
-    val mockDelegate = mock<KinesisInboundHandler<Any, Any>> { }
+    private val mockDelegate = mock<KinesisInboundHandler<Any, Any>> { }
 
     @Test
     fun `should call delegate`() {
@@ -34,7 +34,7 @@ class RetryableRecordHandlerTest {
         val record = mock<Record<Any, Any>> { }
         val context = mock<KinesisInboundHandler.ExecutionContext> { }
         val settings = settings(NO_RETRIES, Duration.ZERO)
-        whenever(mockDelegate.handleRecord(any(), any())).doThrow(RuntimeException::class)
+        whenever(mockDelegate.handleRecord(any(), any())).doThrow(MyException)
 
         handler(settings, mockDelegate).handleRecord(record, context)
 
@@ -47,10 +47,10 @@ class RetryableRecordHandlerTest {
         val context = mock<KinesisInboundHandler.ExecutionContext> { }
         val settings = settings(2, Duration.ZERO)
         whenever(mockDelegate.handleRecord(any(), any()))
-            .doThrow(RuntimeException::class) // 1st call = 1st attempt
-            .doThrow(RuntimeException::class) // 2nd call = 1st retry
-            .doThrow(RuntimeException::class) // 3rd call = 2nd retry
-            .doThrow(RuntimeException::class) // 4th call = shouldn't happen
+            .doThrow(MyException) // 1st call = 1st attempt
+            .doThrow(MyException) // 2nd call = 1st retry
+            .doThrow(MyException) // 3rd call = 2nd retry
+            .doThrow(MyException) // 4th call = shouldn't happen
             .then { } // stop throwing
 
         handler(settings, mockDelegate).handleRecord(record, context)
@@ -64,7 +64,7 @@ class RetryableRecordHandlerTest {
         val context = mock<KinesisInboundHandler.ExecutionContext> { }
         val settings = settings(RetryableRecordProcessorSettings.INFINITE_RETRIES, Duration.ZERO)
 
-        val exceptions = generateSequence { RuntimeException() }.take(9).toList().toTypedArray()
+        val exceptions = generateSequence { MyException }.take(9).toList().toTypedArray()
         whenever(mockDelegate.handleRecord(any(), any()))
             .doThrow(exceptions[0], *exceptions) // throw 10 exceptions
             .then { } // stop throwing on 11st attempt
@@ -87,10 +87,12 @@ class RetryableRecordHandlerTest {
         assertThat(throwable).isInstanceOf(IllegalArgumentException::class.java)
     }
 
-    fun handler(settings: RetryableRecordProcessorSettings, delegate: KinesisInboundHandler<Any, Any>) = RetryableRecordHandler(settings, delegate)
+    private fun handler(settings: RetryableRecordProcessorSettings, delegate: KinesisInboundHandler<Any, Any>) = RetryableRecordHandler(settings, delegate)
 
-    fun settings(maxRetries: Int, backoff: Duration) = RetryableRecordProcessorSettings().apply {
+    private fun settings(maxRetries: Int, backoff: Duration) = RetryableRecordProcessorSettings().apply {
         this.maxRetries = maxRetries
         this.backoff = backoff
     }
+
+    private object MyException : RuntimeException("expected")
 }
