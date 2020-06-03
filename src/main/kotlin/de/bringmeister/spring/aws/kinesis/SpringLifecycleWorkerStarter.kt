@@ -79,14 +79,17 @@ class SpringLifecycleWorkerStarter(
                                     // KCL 2.x runs quite regularly into a race condition reporting incomplete shutdown.
                                     // Therefore, we're additionally waiting for the scheduler to successfully report
                                     // shutdown as per the workaround mentioned in #542.
+                                    // In case of a "real" shutdown error this will be logged separately by KCL.
                                     // @see https://github.com/awslabs/amazon-kinesis-client/issues/542
                                     // @see https://github.com/awslabs/amazon-kinesis-client/issues/616
                                     while (!worker.shutdownComplete()) {
-                                        log.info("Waiting for Scheduler of stream <{}> to shut down...", stream)
+                                        log.info(
+                                            "Waiting for Kinesis worker of stream <{}> to shut down since {}...",
+                                            stream, Duration.ofMillis(System.currentTimeMillis() - worker.shutdownStartTimeMillis()))
                                         Thread.sleep(TimeUnit.MILLISECONDS.toMillis(500))
                                     }
                                     log.info(
-                                        "Scheduler of stream <{}> shut down successfully in {}.",
+                                        "Kinesis worker of stream <{}> shut down in {}.",
                                         stream, Duration.ofMillis(System.currentTimeMillis() - worker.shutdownStartTimeMillis()))
                                 }
                             }
