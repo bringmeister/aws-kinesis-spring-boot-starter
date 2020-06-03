@@ -32,15 +32,14 @@ class AwsKinesisRecordProcessor<D, M>(
         shardId = initializationInput.shardId()
         val workerInitializedEvent = WorkerInitializedEvent(handler.stream, shardId)
         publisher.publishEvent(workerInitializedEvent)
-        log.info("Kinesis listener initialized: [stream={}, shardId={}]", handler.stream, shardId)
+        log.info("Kinesis listener initialized for shard <{}> on <{}>", shardId, handler.stream)
     }
 
     override fun processRecords(processRecordsInput: ProcessRecordsInput) {
         val records = processRecordsInput.records()
         val checkpointer = processRecordsInput.checkpointer()
-        log.trace("Received [{}] records on stream [{}]", records.size, handler.stream)
+        log.trace("Received [{}] records on shard <{}> of <{}>.", records.size, shardId, handler.stream)
         for (record in records) {
-
             processRecord(record)
 
             if (configuration.checkpointing.strategy == CheckpointingStrategy.RECORD) {
@@ -56,7 +55,7 @@ class AwsKinesisRecordProcessor<D, M>(
     private fun processRecord(awsRecord: KinesisClientRecord) {
         val sequenceNumber = awsRecord.sequenceNumber()
         val partitionKey = awsRecord.partitionKey()
-        log.trace("Stream [{}], Seq. No [{}]", handler.stream, sequenceNumber)
+        log.trace("Processing record at sequence number <{}> on shard <{}> of <{}>...", sequenceNumber, shardId, handler.stream)
         val context = AwsExecutionContext(sequenceNumber)
 
         val record: Record<D, M> = try {
@@ -101,9 +100,7 @@ class AwsKinesisRecordProcessor<D, M>(
                 when (e) {
                     is ShutdownException -> log.debug("Checkpointing failed. Application is shutting down.", e)
                     is InvalidStateException -> log.error("Checkpointing failed. Please check corresponding DynamoDB table.", e)
-                    else -> {
-                        log.error("Checkpointing failed. Unknown KinesisClientLibNonRetryableException.", e)
-                    }
+                    else -> log.error("Checkpointing failed. Unknown KinesisClientLibNonRetryableException.", e)
                 }
                 break // break retry loop
             }
@@ -112,12 +109,12 @@ class AwsKinesisRecordProcessor<D, M>(
 
     private fun checkpointSingleRecord(checkpointer: RecordProcessorCheckpointer, record: KinesisClientRecord) {
         val sequenceNumber = record.sequenceNumber()
-        log.debug("Checkpointing record at [{}]", sequenceNumber)
+        log.debug("Checkpointing record at sequence number <{}> on shard <{}> of <{}>...", sequenceNumber, shardId, handler.stream)
         checkpointer.checkpoint(sequenceNumber)
     }
 
     private fun checkpointBatch(checkpointer: RecordProcessorCheckpointer) {
-        log.debug("Checkpointing batch")
+        log.debug("Checkpointing batch on shard <{}> of <{}>...", shardId, handler.stream)
         checkpointer.checkpoint()
     }
 
@@ -130,17 +127,19 @@ class AwsKinesisRecordProcessor<D, M>(
     }
 
     override fun leaseLost(leaseLostInput: LeaseLostInput) {
-        log.info("Lease lost for stream <{}>...", handler.stream)
+        log.info("Lease lost for shard <{}> on stream <{}>.", shardId, handler.stream)
     }
 
     override fun shardEnded(shardEndedInput: ShardEndedInput) {
-        log.info("Shard ended for stream <{}>...", handler.stream)
+        log.info("Shard ended for shard <{}> on stream <{}>. Checkpointing...", shardId, handler.stream)
         checkpoint(shardEndedInput.checkpointer(), null)
+        log.info("Checkpointed shard <{}> on stream <{}>. Shard ended.", shardId, handler.stream)
     }
 
     override fun shutdownRequested(shutdownRequestedInput: ShutdownRequestedInput) {
-        log.info("Shutting down record processor for stream <{}>...", handler.stream)
+        log.info("Shutting down record processor for shard <{}> on stream <{}>...", shardId, handler.stream)
         checkpoint(shutdownRequestedInput.checkpointer(), null)
+        log.info("Record processor for shard <{}> on stream <{}> shut down successfully.", shardId, handler.stream)
     }
 
     private data class AwsExecutionContext(override val sequenceNumber: String) : KinesisInboundHandler.ExecutionContext

@@ -65,26 +65,42 @@ class SpringLifecycleWorkerStarter(
             val shutdownTasks = workers.map { (worker, stream) ->
                 Callable {
                     log.info("Shutting down Kinesis worker of stream <{}>...", stream)
-                    val future = worker.startGracefulShutdown()
-                    try {
-                        when (future.get(workerShutdownTimeout.toMillis(), TimeUnit.MILLISECONDS)) {
-                            true -> log.info("Kinesis worker of stream <{}> successfully shut down.", stream)
-                            false -> log.error(
-                                "Kinesis worker of stream <{}> was shut down with unexpected status. " +
-                                "Check preceding log statements from AWS Kinesis Library for additional information.",
-                                stream
-                            )
+                    if (workerShutdownTimeout.isZero) {
+                        worker.shutdown()
+                        log.info("Lease Coordinator of stream <{}> was shut down. Workers will follow.", stream)
+                    } else {
+                        val future = worker.startGracefulShutdown()
+                        try {
+                            when (future.get(workerShutdownTimeout.toMillis(), TimeUnit.MILLISECONDS)) {
+                                true -> log.info(
+                                    "Kinesis worker of stream <{}> successfully shut down in {}.",
+                                    stream, Duration.ofMillis(System.currentTimeMillis() - worker.shutdownStartTimeMillis()))
+                                false -> {
+                                    // KCL 2.x runs quite regularly into a race condition reporting incomplete shutdown.
+                                    // Therefore, we're additionally waiting for the scheduler to successfully report
+                                    // shutdown as per the workaround mentioned in #542.
+                                    // @see https://github.com/awslabs/amazon-kinesis-client/issues/542
+                                    // @see https://github.com/awslabs/amazon-kinesis-client/issues/616
+                                    while (!worker.shutdownComplete()) {
+                                        log.info("Waiting for Scheduler of stream <{}> to shut down...", stream)
+                                        Thread.sleep(TimeUnit.MILLISECONDS.toMillis(500))
+                                    }
+                                    log.info(
+                                        "Scheduler of stream <{}> shut down successfully in {}.",
+                                        stream, Duration.ofMillis(System.currentTimeMillis() - worker.shutdownStartTimeMillis()))
+                                }
+                            }
+                        } catch (ex: TimeoutException) {
+                            log.error("Kinesis worker of stream <{}> did not properly shut down within {} seconds.", stream, workerShutdownTimeout.seconds)
+                        } catch (ex: ExecutionException) {
+                            log.error("Kinesis worker of stream <{}> shut down with an exception.", stream, ex)
                         }
-                    } catch (ex: TimeoutException) {
-                        log.error("Kinesis worker of stream <{}> did not properly shut down within {} seconds.", stream, workerShutdownTimeout.seconds)
-                    } catch (ex: ExecutionException) {
-                        log.error("Kinesis worker of stream <{}> shut down with an exception.", stream, ex)
                     }
                 }
             }
 
             if (shutdownTasks.isNotEmpty()) {
-                val executor = Executors.newFixedThreadPool(Math.min(workerShutdownMaxNumberThreads, shutdownTasks.size))
+                val executor = Executors.newFixedThreadPool(workerShutdownMaxNumberThreads.coerceAtMost(shutdownTasks.size))
                 executor.invokeAll(shutdownTasks)
                 executor.shutdown()
                 executor.awaitTermination(workerShutdownTimeout.toMillis() * workers.size, TimeUnit.MILLISECONDS)

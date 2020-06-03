@@ -21,6 +21,7 @@ import org.springframework.context.ApplicationEventPublisher
 import software.amazon.kinesis.exceptions.KinesisClientLibNonRetryableException
 import software.amazon.kinesis.exceptions.KinesisClientLibRetryableException
 import software.amazon.kinesis.exceptions.ThrottlingException
+import software.amazon.kinesis.lifecycle.events.InitializationInput
 import software.amazon.kinesis.lifecycle.events.LeaseLostInput
 import software.amazon.kinesis.lifecycle.events.ProcessRecordsInput
 import software.amazon.kinesis.lifecycle.events.ShardEndedInput
@@ -56,8 +57,16 @@ class AwsKinesisRecordProcessorTest {
     private val objectMapper = ObjectMapper().registerModule(KotlinModule())
     private val recordDeserializer = ObjectMapperRecordDeserializerFactory(objectMapper).deserializerFor(mockHandler)
 
-    private fun recordProcessor(configuration: RecordProcessorConfiguration = exampleConfig): AwsKinesisRecordProcessor<ExampleData, ExampleMetadata> {
+    private fun recordProcessor(
+        configuration: RecordProcessorConfiguration = exampleConfig,
+        initialize: Boolean = true
+    ): AwsKinesisRecordProcessor<ExampleData, ExampleMetadata> {
         return AwsKinesisRecordProcessor(recordDeserializer, configuration, mockHandler, mockEventPublisher)
+            .apply {
+                if (initialize) {
+                    initialize(InitializationInput.builder().shardId("abc").build())
+                }
+            }
     }
 
     private val events = listOf(
@@ -80,7 +89,7 @@ class AwsKinesisRecordProcessorTest {
     /* ---- Initialization ---- */
     @Test
     fun `should publish event on initialization`() {
-        recordProcessor().initialize(mock { on { shardId() } doReturn "any" })
+        recordProcessor(initialize = false).initialize(mock { on { shardId() } doReturn "any" })
 
         val captor = argumentCaptor<WorkerInitializedEvent>()
         verify(mockEventPublisher).publishEvent(captor.capture())
