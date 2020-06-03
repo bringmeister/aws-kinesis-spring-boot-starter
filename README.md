@@ -162,6 +162,29 @@ Default: `false`
 
 **Note**: This setting applies globally to the whole AWS SDK.
 
+
+#### MDC
+
+By default, this starter adds metadata when processing records to MDC.
+This feature can be disable by setting `mdc.enabled` flag to `false`:
+
+```yaml
+aws:
+  kinesis:
+    ...
+    mdc:
+      enabled: false
+```
+
+By default, `mdc.enabled` is turned on.
+
+Use the following properties to adjust the MDC property or disable it completely:
+* `aws.kinesis.mdc.stream-name-property`
+* `aws.kinesis.mdc.sequence-number-property`
+* `aws.kinesis.mdc.partition-key-property`
+
+Setting the property to `null` omits it from MDC. 
+
 #### Configuring initial position in stream
 
 You can use one of following values:

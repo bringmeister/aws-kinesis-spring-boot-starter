@@ -1,6 +1,7 @@
 package de.bringmeister.spring.aws.kinesis
 
 import de.bringmeister.spring.aws.kinesis.creation.KinesisCreateStreamAutoConfiguration
+import de.bringmeister.spring.aws.kinesis.mdc.KinesisMdcAutoConfiguration
 import de.bringmeister.spring.aws.kinesis.metrics.KinesisMetricsAutoConfiguration
 import de.bringmeister.spring.aws.kinesis.retry.RetryableRecordHandlerAutoConfiguration
 import de.bringmeister.spring.aws.kinesis.validation.KinesisValidationAutoConfiguration
@@ -17,7 +18,8 @@ import org.springframework.test.context.ActiveProfiles
         RetryableRecordHandlerAutoConfiguration::class,
         KinesisCreateStreamAutoConfiguration::class,
         KinesisMetricsAutoConfiguration::class,
-        KinesisValidationAutoConfiguration::class
+        KinesisValidationAutoConfiguration::class,
+        KinesisMdcAutoConfiguration::class
     ]
 )
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
