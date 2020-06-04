@@ -3,11 +3,9 @@ package de.bringmeister.spring.aws.kinesis
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import software.amazon.kinesis.exceptions.InvalidStateException
-import software.amazon.kinesis.exceptions.KinesisClientLibDependencyException
 import software.amazon.kinesis.exceptions.KinesisClientLibNonRetryableException
 import software.amazon.kinesis.exceptions.KinesisClientLibRetryableException
 import software.amazon.kinesis.exceptions.ShutdownException
-import software.amazon.kinesis.exceptions.ThrottlingException
 import software.amazon.kinesis.lifecycle.events.InitializationInput
 import software.amazon.kinesis.lifecycle.events.LeaseLostInput
 import software.amazon.kinesis.lifecycle.events.ProcessRecordsInput
@@ -56,7 +54,7 @@ class AwsKinesisRecordProcessor<D, M>(
         val sequenceNumber = awsRecord.sequenceNumber()
         val partitionKey = awsRecord.partitionKey()
         log.trace("Processing record at sequence number <{}> on shard <{}> of <{}>...", sequenceNumber, shardId, handler.stream)
-        val context = AwsExecutionContext(sequenceNumber)
+        val context = AwsExecutionContext(shardId = shardId, sequenceNumber = sequenceNumber)
 
         val record: Record<D, M> = try {
             recordDeserializer.deserialize(awsRecord)
@@ -142,5 +140,8 @@ class AwsKinesisRecordProcessor<D, M>(
         log.info("Record processor for shard <{}> on stream <{}> shut down successfully.", shardId, handler.stream)
     }
 
-    private data class AwsExecutionContext(override val sequenceNumber: String) : KinesisInboundHandler.ExecutionContext
+    private data class AwsExecutionContext(
+        override val shardId: String,
+        override val sequenceNumber: String
+    ) : KinesisInboundHandler.ExecutionContext
 }

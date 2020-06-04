@@ -32,5 +32,6 @@ interface KinesisInboundHandler<D, M> {
     /** Per-execution metadata */
     interface ExecutionContext {
         val sequenceNumber: String
+        val shardId: String
     }
 }

@@ -14,6 +14,9 @@ class MdcInboundHandler<D, M>(
             if (!settings.streamNameProperty.isNullOrBlank()) {
                 MDC.put(settings.streamNameProperty, stream)
             }
+            if (!settings.shardIdProperty.isNullOrBlank()) {
+                MDC.put(settings.shardIdProperty, context.shardId)
+            }
             if (!settings.sequenceNumberProperty.isNullOrBlank()) {
                 MDC.put(settings.sequenceNumberProperty, context.sequenceNumber)
             }
@@ -24,6 +27,9 @@ class MdcInboundHandler<D, M>(
         } finally {
             if (!settings.streamNameProperty.isNullOrBlank()) {
                 MDC.remove(settings.streamNameProperty)
+            }
+            if (!settings.shardIdProperty.isNullOrBlank()) {
+                MDC.remove(settings.shardIdProperty)
             }
             if (!settings.sequenceNumberProperty.isNullOrBlank()) {
                 MDC.remove(settings.sequenceNumberProperty)

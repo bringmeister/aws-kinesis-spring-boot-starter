@@ -7,7 +7,8 @@ import org.springframework.validation.annotation.Validated
 @ConfigurationProperties(prefix = "aws.kinesis.mdc")
 class MdcSettings {
 
-    var streamNameProperty: String? = "awsStream"
-    var sequenceNumberProperty: String? = "awsSequenceNumber"
+    var streamNameProperty: String? = "stream"
+    var shardIdProperty: String? = "shardId"
+    var sequenceNumberProperty: String? = "sequenceNumber"
     var partitionKeyProperty: String? = null
 }
