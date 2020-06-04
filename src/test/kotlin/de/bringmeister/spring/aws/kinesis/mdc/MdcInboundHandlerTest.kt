@@ -30,12 +30,14 @@ class MdcInboundHandlerTest {
         val context = TestKinesisInboundHandler.TestExecutionContext(sequenceNumber = "some-sequence-number")
         val settings = MdcSettings().apply {
             streamNameProperty = "name"
+            shardIdProperty = "shId"
             sequenceNumberProperty = "sn"
             partitionKeyProperty = "pk"
         }
 
         whenever(mockDelegate.handleRecord(record, context)).then {
             assertThat(MDC.get(settings.streamNameProperty)).isEqualTo(mockDelegate.stream)
+            assertThat(MDC.get(settings.shardIdProperty)).isEqualTo(context.shardId)
             assertThat(MDC.get(settings.sequenceNumberProperty)).isEqualTo(context.sequenceNumber)
             assertThat(MDC.get(settings.partitionKeyProperty)).isEqualTo(record.partitionKey)
         }
@@ -49,6 +51,7 @@ class MdcInboundHandlerTest {
         val context = TestKinesisInboundHandler.TestExecutionContext(sequenceNumber = "omitted")
         val settings = MdcSettings().apply {
             streamNameProperty = null
+            shardIdProperty = null
             sequenceNumberProperty = null
             partitionKeyProperty = null
         }

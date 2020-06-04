@@ -176,12 +176,11 @@ aws:
       enabled: false
 ```
 
-By default, `mdc.enabled` is turned on.
-
 Use the following properties to adjust the MDC property or disable it completely:
 * `aws.kinesis.mdc.stream-name-property`
+* `aws.kinesis.mdc.shard-id-property`
 * `aws.kinesis.mdc.sequence-number-property`
-* `aws.kinesis.mdc.partition-key-property`
+* `aws.kinesis.mdc.partition-key-property` (`null` by default)
 
 Setting the property to `null` omits it from MDC. 
 

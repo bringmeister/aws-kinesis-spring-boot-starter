@@ -8,6 +8,7 @@ internal class TestKinesisInboundHandler : KinesisInboundHandler<Any, Any> {
     override fun metaType() = Any::class.java
 
     class TestExecutionContext(
-        override val sequenceNumber: String = "any"
+        override val sequenceNumber: String = "any",
+        override val shardId: String = "some-shard"
     ) : KinesisInboundHandler.ExecutionContext
 }
