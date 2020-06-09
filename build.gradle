@@ -56,10 +56,18 @@ group = 'de.bringmeister'
 sourceCompatibility = 1.8
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions {
+        freeCompilerArgs = ["-Xjsr305=strict"]
+        jvmTarget = "1.8"
+        javaParameters = true
+    }
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions {
+        freeCompilerArgs = ["-Xjsr305=strict"]
+        jvmTarget = "1.8"
+        javaParameters = true
+    }
 }
 
 configurations {
