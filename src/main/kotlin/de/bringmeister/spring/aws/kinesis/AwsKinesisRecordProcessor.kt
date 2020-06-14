@@ -1,26 +1,12 @@
 package de.bringmeister.spring.aws.kinesis
 
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.InvalidStateException
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.KinesisClientLibNonRetryableException
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.KinesisClientLibRetryableException
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.ShutdownException
-import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorCheckpointer
-import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessor
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.ShutdownReason
-import com.amazonaws.services.kinesis.clientlibrary.types.InitializationInput
-import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput
-import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import software.amazon.kinesis.exceptions.InvalidStateException
 import software.amazon.kinesis.exceptions.KinesisClientLibNonRetryableException
 import software.amazon.kinesis.exceptions.KinesisClientLibRetryableException
 import software.amazon.kinesis.exceptions.ShutdownException
-import software.amazon.kinesis.lifecycle.events.InitializationInput
-import software.amazon.kinesis.lifecycle.events.LeaseLostInput
-import software.amazon.kinesis.lifecycle.events.ProcessRecordsInput
-import software.amazon.kinesis.lifecycle.events.ShardEndedInput
-import software.amazon.kinesis.lifecycle.events.ShutdownRequestedInput
+import software.amazon.kinesis.lifecycle.events.*
 import software.amazon.kinesis.processor.RecordProcessorCheckpointer
 import software.amazon.kinesis.processor.ShardRecordProcessor
 import software.amazon.kinesis.retrieval.KinesisClientRecord
@@ -48,44 +34,53 @@ class AwsKinesisRecordProcessor<D, M>(
         val checkpointer = processRecordsInput.checkpointer()
         log.trace("Received [{}] records on shard <{}> of <{}>.", records.size, shardId, handler.stream)
         if (handler.isBatch()) {
-            processRecordsBatch(processRecordsInput)
+            processRecordsBatch(processRecordsInput, checkpointer)
         } else {
-            processRecordsSingle(processRecordsInput)
+            processRecordsSingle(processRecordsInput, checkpointer)
         }
     }
 
-    private fun processRecordsBatch(processRecordsInput: ProcessRecordsInput) {
+    private fun processRecordsBatch(
+        processRecordsInput: ProcessRecordsInput,
+        checkpointer: RecordProcessorCheckpointer
+    ) {
         handler.handleRecords(
-            processRecordsInput.records.mapNotNull { toRecord(it)?.first },
+            processRecordsInput.records().mapNotNull { toRecord(it)?.first },
             toLastExecutionContext(processRecordsInput)
         )
-        checkpoint(processRecordsInput.checkpointer)
+        checkpoint(checkpointer)
     }
 
     private fun toLastExecutionContext(processRecordsInput: ProcessRecordsInput) =
-        AwsExecutionContext(processRecordsInput.records.sortedByDescending { it.sequenceNumber }.first().sequenceNumber)
+        AwsExecutionContext(
+            shardId,
+            processRecordsInput.records().maxBy { it.sequenceNumber() }!!.sequenceNumber()
+        )
 
-    private fun processRecordsSingle(processRecordsInput: ProcessRecordsInput) {
-        processRecordsInput.records.forEach {
-            processRecord(it)
+    private fun processRecordsSingle(
+        processRecordsInput: ProcessRecordsInput,
+        checkpointer: RecordProcessorCheckpointer
+    ) {
+        processRecordsInput.records().forEach { clientRecord ->
+            toRecord(clientRecord)?.let { handler.handleRecord(it.first, it.second) }
             if (configuration.checkpointing.strategy == CheckpointingStrategy.RECORD) {
-                checkpoint(processRecordsInput.checkpointer, it)
+                checkpoint(checkpointer, clientRecord)
             }
         }
-
         if (configuration.checkpointing.strategy == CheckpointingStrategy.BATCH) {
             checkpoint(checkpointer)
         }
     }
 
-    private fun processRecord(awsRecord: KinesisClientRecord) {
+    private fun toRecord(awsRecord: KinesisClientRecord): Pair<Record<D, M>, AwsExecutionContext>? {
         val sequenceNumber = awsRecord.sequenceNumber()
         val partitionKey = awsRecord.partitionKey()
-        toRecord(awsRecord)?.let { handler.handleRecord(it.first, it.second) }
-    }
-
-    private fun toRecord(awsRecord: AwsRecord): Pair<Record<D, M>, AwsExecutionContext>? {
-        log.trace("Processing record at sequence number <{}> on shard <{}> of <{}>...", sequenceNumber, shardId, handler.stream)
+        log.trace(
+            "Processing record at sequence number <{}> on shard <{}> of <{}>...",
+            sequenceNumber,
+            shardId,
+            handler.stream
+        )
         val context = AwsExecutionContext(shardId = shardId, sequenceNumber = sequenceNumber)
 
         val record = try {
@@ -97,7 +92,11 @@ class AwsKinesisRecordProcessor<D, M>(
                 deserializationException
             )
             try {
-                handler.handleDeserializationError(deserializationException, awsRecord.data().asReadOnlyBuffer(), context)
+                handler.handleDeserializationError(
+                    deserializationException,
+                    awsRecord.data().asReadOnlyBuffer(),
+                    context
+                )
             } catch (e: Throwable) {
                 log.error(
                     "Error occurred in handler during call to handleDeserializationError for stream <{}> [sequenceNumber={}, partitionKey={}]",
@@ -121,10 +120,19 @@ class AwsKinesisRecordProcessor<D, M>(
                 break
             } catch (e: KinesisClientLibRetryableException) {
                 if (attempt == maxAttempts) {
-                    log.error("Checkpointing failed. Couldn't store checkpoint after max attempts of [{}].", maxAttempts, e)
+                    log.error(
+                        "Checkpointing failed. Couldn't store checkpoint after max attempts of [{}].",
+                        maxAttempts,
+                        e
+                    )
                     break
                 }
-                log.warn("Checkpointing failed. Transient issue during checkpointing. Attempt [{}] of [{}]", attempt, maxAttempts, e)
+                log.warn(
+                    "Checkpointing failed. Transient issue during checkpointing. Attempt [{}] of [{}]",
+                    attempt,
+                    maxAttempts,
+                    e
+                )
                 backoff()
             } catch (e: KinesisClientLibNonRetryableException) {
                 when (e) {
@@ -142,7 +150,12 @@ class AwsKinesisRecordProcessor<D, M>(
 
     private fun checkpointSingleRecord(checkpointer: RecordProcessorCheckpointer, record: KinesisClientRecord) {
         val sequenceNumber = record.sequenceNumber()
-        log.debug("Checkpointing record at sequence number <{}> on shard <{}> of <{}>...", sequenceNumber, shardId, handler.stream)
+        log.debug(
+            "Checkpointing record at sequence number <{}> on shard <{}> of <{}>...",
+            sequenceNumber,
+            shardId,
+            handler.stream
+        )
         checkpointer.checkpoint(sequenceNumber)
     }
 

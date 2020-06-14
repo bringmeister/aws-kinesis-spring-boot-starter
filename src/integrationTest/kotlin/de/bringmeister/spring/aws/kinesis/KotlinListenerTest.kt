@@ -57,7 +57,7 @@ class KotlinListenerTest {
         val dynamodb = Containers.dynamoDb()
 
         const val STREAM = "foo-event-stream"
-        const val BATCH_STREAM = "any-batch-stream"
+        const val BATCH_STREAM = "foo-event-stream-batch"
         const val EXPECTED_DATA = "my-data"
         const val EXPECTED_METADATA = "my-metadata"
 
