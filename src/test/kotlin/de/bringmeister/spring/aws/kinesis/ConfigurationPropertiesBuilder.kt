@@ -77,6 +77,6 @@ class ConfigurationPropertiesBuilder<T>(
         val resource = ClassPathResource(fileName)
         val factoryBean = YamlPropertiesFactoryBean()
         factoryBean.setResources(resource)
-        return factoryBean.`object`
+        return requireNotNull(factoryBean.`object`)
     }
 }
