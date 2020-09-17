@@ -12,3 +12,7 @@ aws:
         aws-account-id: "222222222222"
         iam-role-to-assume: ExampleKinesisRole
         initial-position-in-stream: TRIM_HORIZON
+      - stream-name: foo-event-stream-batch
+        aws-account-id: "222222222222"
+        iam-role-to-assume: ExampleKinesisRole
+        initial-position-in-stream: TRIM_HORIZON

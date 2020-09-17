@@ -14,14 +14,14 @@ class DefaultKinesisTagsProviderTest {
     @Test
     fun `should provide tags for outbound metrics (cause = null)`() {
 
-        val tags = tagsProvider.outboundTags(streamName, arrayOf(record), null)
+        val tags = tagsProvider.outboundTags(streamName, null)
         assertTags(tags)
     }
 
     @Test
     fun `should provide tags for outbound metrics (cause = MyException)`() {
 
-        val tags = tagsProvider.outboundTags(streamName, arrayOf(record), MyException)
+        val tags = tagsProvider.outboundTags(streamName, MyException)
         assertTags(tags, cause = MyException)
     }
 

@@ -390,6 +390,43 @@ class MyKinesisListener {
 
 See `KotlinListenerTest.kt` for an example.
 
+#### Consume as batch
+
+To enable batch consuming, change the signature to `Map` instead of data and meta-data. The map will contain the 
+data as key and the meta-data as value. Due to java generic and erasure the types of the data and meta-data must 
+be explicitly set in the annotation. Two new fields have been added, `dataClass` and `metaClass`, the types must 
+align with the map types. 
+
+Java example:
+
+```Java
+@Service
+public class MyKinesisListener {
+
+    @KinesisListener(stream = "foo-stream", dataClass = MyData.class, metaClass = MyMetadata.class)
+    public void handle(Map<MyData, MyMetadata> events) {
+        System.out.println(events.entrySet().stream()
+                                            .map(e -> e.getKey() + ", " + e.getValue())
+                                            .collect(joining()));
+    }
+}
+```
+
+See `JavaListenerTest.java` for an example.
+
+Kotlin example:
+
+```Kotlin
+@Service
+class MyKinesisListener {
+
+    @KinesisListener(stream = "foo-stream", dataClass = MyData::class, metaClass = MyMetadata::class)
+    override fun handle(events: Map<MyData, MyMetadata>) = println(events.map("${it.key}, ${it.value}").joinToString())
+}
+```
+
+See `KotlinListenerTest.kt` for an example.
+
 ## Developer Guide
 
 We're using the official Kotlin Style Guide to format our code.

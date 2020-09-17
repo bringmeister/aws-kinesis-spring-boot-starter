@@ -2,26 +2,38 @@ package de.bringmeister.spring.aws.kinesis
 
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.util.concurrent.atomic.AtomicBoolean
 
 class KinesisListenerProxy(
     method: Method,
     bean: Any,
     override val stream: String
-): KinesisInboundHandler<Any, Any> {
+) : KinesisInboundHandler<Any, Any> {
 
     private val dataClass: Class<Any>
     private val metaClass: Class<Any>
+    private var batch = AtomicBoolean(false)
 
-    private val listener: (data: Any?, meta: Any?) -> Unit
+    private lateinit var listener: (data: Any?, meta: Any?) -> Unit
+    private lateinit var listeners: (events: Map<Any?, Any?>) -> Unit
 
     init {
         val parameters = method.parameters
         @Suppress("UNCHECKED_CAST")
         when (parameters.size) {
             1 -> {
-                this.dataClass = parameters[0].type as Class<Any>
-                this.metaClass = Void::class.java as Class<Any>
-                this.listener = { data, _ -> method.invoke(bean, data) }
+                val type = parameters[0].type
+                if (type.isAssignableFrom(Map::class.java)) {
+                    val kinesisListener = method.getAnnotation(KinesisListener::class.java)
+                    this.dataClass = kinesisListener.dataClass.java as Class<Any>
+                    this.metaClass = kinesisListener.metaClass.java as Class<Any>
+                    this.listeners = { events -> method.invoke(bean, events) }
+                    this.batch.set(true)
+                } else {
+                    this.dataClass = parameters[0].type as Class<Any>
+                    this.metaClass = Void::class.java as Class<Any>
+                    this.listener = { data, _ -> method.invoke(bean, data) }
+                }
             }
             2 -> {
                 this.dataClass = parameters[0].type as Class<Any>
@@ -42,6 +54,15 @@ class KinesisListenerProxy(
         }
     }
 
+    override fun handleRecords(records: List<Record<Any, Any>>, context: KinesisInboundHandler.ExecutionContext) {
+        try {
+            listeners.invoke(records.map { it.data to it.metadata }.toMap())
+        } catch (ex: InvocationTargetException) {
+            throw ex.targetException
+        }
+    }
+
     override fun dataType() = dataClass
     override fun metaType() = metaClass
+    override fun isBatch() = batch.get()
 }
