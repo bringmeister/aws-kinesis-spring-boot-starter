@@ -10,12 +10,11 @@ import org.springframework.boot.context.properties.bind.BindException
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
-import software.amazon.kinesis.common.InitialPositionInStream
 import java.time.Duration
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [ValidationAutoConfiguration::class])
-class AwsKinesisProducerSettingsTest {
+class AwsKinesisSettingsTest {
 
     @Autowired
     private lateinit var localValidatorFactoryBean: LocalValidatorFactoryBean
@@ -140,5 +139,26 @@ class AwsKinesisProducerSettingsTest {
         assertThat(settings.kinesisUrl).isNull()
         assertThat(settings.dynamoDbSettings).isNull()
         assertThat(settings.createStreams).isTrue()
+    }
+
+    @Test
+    fun `should read configuration for health indicator creation`() {
+        val settings = builder<AwsKinesisSettings>()
+            .withPrefix("aws.kinesis")
+            .withProperty("region", "eu-central-1")
+            .withProperty("enableHealthIndicator", "true")
+            .validateUsing(localValidatorFactoryBean)
+            .build()
+        assertThat(settings.enableHealthIndicator).isTrue()
+    }
+
+    @Test
+    fun `should set default configuration for health indicator creation to false`() {
+        val settings = builder<AwsKinesisSettings>()
+            .withPrefix("aws.kinesis")
+            .withProperty("region", "eu-central-1")
+            .validateUsing(localValidatorFactoryBean)
+            .build()
+        assertThat(settings.enableHealthIndicator).isFalse()
     }
 }

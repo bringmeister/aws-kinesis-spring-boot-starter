@@ -5,7 +5,6 @@ import org.springframework.validation.annotation.Validated
 import software.amazon.kinesis.common.InitialPositionInStream
 import software.amazon.kinesis.metrics.MetricsLevel
 import java.time.Duration
-import java.util.concurrent.TimeUnit
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
@@ -57,6 +56,7 @@ class AwsKinesisSettings {
     var creationTimeout: Duration = Duration.ofSeconds(30)
     var streams: MutableList<StreamSettings> = mutableListOf()
     var roleCredentials: MutableList<RoleCredentials> = mutableListOf()
+    var enableHealthIndicator: Boolean = false
 
     fun getStreamSettingsOrDefault(stream: String): StreamSettings {
         return streams.firstOrNull { it.streamName == stream } ?: return defaultSettingsFor(stream)
