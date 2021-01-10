@@ -10,7 +10,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
 @Component
-@ConditionalOnProperty("aws.kinesis.enableHealthIndicator", havingValue = "true")
+@ConditionalOnProperty(prefix = "aws.kinesis", name = ["enableHealthIndicator"],  havingValue = "true")
 class KinesisListenerRegistry {
 
     private val log: Logger = LoggerFactory.getLogger(this.javaClass)
