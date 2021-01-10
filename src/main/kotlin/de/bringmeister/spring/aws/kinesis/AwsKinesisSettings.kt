@@ -48,6 +48,7 @@ class AwsKinesisSettings {
     var creationTimeoutInMilliSeconds = TimeUnit.SECONDS.toMillis(30)
     var streams: MutableList<StreamSettings> = mutableListOf()
     var roleCredentials: MutableList<RoleCredentials> = mutableListOf()
+    var enableHealthIndicator: Boolean = false
 
     fun getStreamSettingsOrDefault(stream: String): StreamSettings {
         return streams.firstOrNull { it.streamName == stream } ?: return defaultSettingsFor(stream)
