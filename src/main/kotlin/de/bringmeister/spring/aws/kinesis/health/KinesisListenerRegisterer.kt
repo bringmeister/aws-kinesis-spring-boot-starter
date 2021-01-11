@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 @Component
-@ConditionalOnProperty(prefix = "aws.kinesis", name = ["enableHealthIndicator"],  havingValue = "true")
+@ConditionalOnProperty(prefix = "aws.kinesis", name = ["enableHealthIndicator"], havingValue = "true")
 class KinesisListenerRegisterer(
     private val kinesisListenerRegistry: KinesisListenerRegistry,
     private val kinesisListenerProxyFactory: KinesisListenerProxyFactory

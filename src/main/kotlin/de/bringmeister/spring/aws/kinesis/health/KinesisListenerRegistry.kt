@@ -10,7 +10,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
 @Component
-@ConditionalOnProperty(prefix = "aws.kinesis", name = ["enableHealthIndicator"],  havingValue = "true")
+@ConditionalOnProperty(prefix = "aws.kinesis", name = ["enableHealthIndicator"], havingValue = "true")
 class KinesisListenerRegistry {
 
     private val log: Logger = LoggerFactory.getLogger(this.javaClass)
@@ -19,7 +19,7 @@ class KinesisListenerRegistry {
     private val streams = mutableMapOf<String, Boolean>()
 
     @EventListener
-    internal fun workerInitializedEvent(workerInitializedEvent: WorkerInitializedEvent) {
+    fun workerInitializedEvent(workerInitializedEvent: WorkerInitializedEvent) {
         if (latch == null) {
             latch = CountDownLatch(streamCount.get())
         }
@@ -31,14 +31,14 @@ class KinesisListenerRegistry {
         }
     }
 
-    internal fun areAllListenersInitialized(): Boolean {
+    fun areAllListenersInitialized(): Boolean {
         if (latch == null) {
             latch = CountDownLatch(streamCount.get())
         }
         return latch!!.count <= 0
     }
 
-    internal fun addStreamToCheckFor(stream: String) {
+    fun addStreamToCheckFor(stream: String) {
         if (!streams.containsKey(stream)) {
             log.info("Wait for Kinesis listener to be initialized. [stream={}]", stream)
             streams[stream] = false
