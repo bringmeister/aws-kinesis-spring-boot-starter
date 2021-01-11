@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 @Component
 @ConditionalOnProperty(prefix = "aws.kinesis", name = ["enableHealthIndicator"], havingValue = "true")
 class KinesisListenersInitializationHealthIndicator(
-    private val kinesisRegistry: KinesisListenerRegistry
+    val kinesisRegistry: KinesisListenerRegistry
 ) : HealthIndicator {
 
     override fun health(): Health {

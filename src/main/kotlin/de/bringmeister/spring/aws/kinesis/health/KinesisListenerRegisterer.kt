@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component
 @Component
 @ConditionalOnProperty(prefix = "aws.kinesis", name = ["enableHealthIndicator"], havingValue = "true")
 class KinesisListenerRegisterer(
-    private val kinesisListenerRegistry: KinesisListenerRegistry,
-    private val kinesisListenerProxyFactory: KinesisListenerProxyFactory
+    val kinesisListenerRegistry: KinesisListenerRegistry,
+    val kinesisListenerProxyFactory: KinesisListenerProxyFactory
 ) : BeanPostProcessor {
 
     override fun postProcessAfterInitialization(bean: Any, beanName: String): Any {
