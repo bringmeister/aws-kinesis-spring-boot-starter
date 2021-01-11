@@ -3,14 +3,12 @@ package de.bringmeister.spring.aws.kinesis.health
 import de.bringmeister.spring.aws.kinesis.WorkerInitializedEvent
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
 @Component
-@ConditionalOnProperty(prefix = "aws.kinesis", name = ["enableHealthIndicator"], havingValue = "true")
 class KinesisListenerRegistry {
 
     private val log: Logger = LoggerFactory.getLogger(this.javaClass)
@@ -45,4 +43,6 @@ class KinesisListenerRegistry {
             streamCount.incrementAndGet()
         }
     }
+
+    fun initializedKinesisListeners() = streams.keys
 }

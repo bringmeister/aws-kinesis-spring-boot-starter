@@ -24,19 +24,8 @@ class HealthIndicatorPostProcessorIntegrationTest {
         )
 
     @Test
-    fun `no health indicator should be created per default`() {
+    fun `health indicator should be created`() {
         contextRunner
-            .run { context: AssertableApplicationContext? ->
-                assertThat(context).doesNotHaveBean(KinesisListenerRegistry::class.java)
-                assertThat(context).doesNotHaveBean(KinesisListenerRegisterer::class.java)
-                assertThat(context).doesNotHaveBean(KinesisListenersInitializationHealthIndicator::class.java)
-            }
-    }
-
-    @Test
-    fun `health indicator should be created if configured`() {
-        contextRunner
-            .withPropertyValues("aws.kinesis.enableHealthIndicator=true")
             .run { context: AssertableApplicationContext? ->
                 assertThat(context).hasSingleBean(KinesisListenerRegistry::class.java)
                 assertThat(context).hasSingleBean(KinesisListenerRegisterer::class.java)
