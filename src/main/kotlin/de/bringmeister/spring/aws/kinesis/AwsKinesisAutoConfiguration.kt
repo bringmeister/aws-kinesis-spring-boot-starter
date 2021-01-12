@@ -3,6 +3,9 @@ package de.bringmeister.spring.aws.kinesis
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.fasterxml.jackson.databind.ObjectMapper
+import de.bringmeister.spring.aws.kinesis.health.KinesisHealthIndicator
+import de.bringmeister.spring.aws.kinesis.health.KinesisListenerRegisterer
+import de.bringmeister.spring.aws.kinesis.health.KinesisListenerRegistry
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
@@ -129,5 +132,28 @@ class AwsKinesisAutoConfiguration {
         System.setProperty("com.amazonaws.sdk.disableCbor", "1")
         val kinesisClient = kinesisClientProvider.defaultClient()
         return StreamInitializer(kinesisClient, kinesisSettings)
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    fun kinesisListenerRegistry(): KinesisListenerRegistry {
+        return KinesisListenerRegistry()
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    fun kinesisListenerRegisterer(
+        kinesisRegistry: KinesisListenerRegistry,
+        kinesisListenerProxyFactory: KinesisListenerProxyFactory
+    ): KinesisListenerRegisterer {
+        return KinesisListenerRegisterer(kinesisRegistry, kinesisListenerProxyFactory)
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    fun kinesisHealthIndicator(
+        kinesisRegistry: KinesisListenerRegistry
+    ): KinesisHealthIndicator {
+        return KinesisHealthIndicator(kinesisRegistry)
     }
 }
