@@ -4,11 +4,9 @@ import de.bringmeister.spring.aws.kinesis.WorkerInitializedEvent
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.event.EventListener
-import org.springframework.stereotype.Component
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
-@Component
 class KinesisListenerRegistry {
 
     private val log: Logger = LoggerFactory.getLogger(this.javaClass)
@@ -18,9 +16,7 @@ class KinesisListenerRegistry {
 
     @EventListener
     fun workerInitializedEvent(workerInitializedEvent: WorkerInitializedEvent) {
-        if (latch == null) {
-            latch = CountDownLatch(streamCount.get())
-        }
+        if (latch == null) latch = CountDownLatch(streamCount.get())
         val stream = workerInitializedEvent.streamName
         if (streams[stream] == false) {
             latch!!.countDown()
@@ -30,8 +26,10 @@ class KinesisListenerRegistry {
     }
 
     fun areAllListenersInitialized(): Boolean {
+        log.debug("Streams listeners status {}", streams)
         if (latch == null) {
-            latch = CountDownLatch(streamCount.get())
+            log.warn("Streams listeners are still initializing now or probably no streams listeners were configured.")
+            return false
         }
         return latch!!.count <= 0
     }
@@ -44,5 +42,5 @@ class KinesisListenerRegistry {
         }
     }
 
-    fun initializedKinesisListeners() = streams.keys
+    fun initializedStreams() = streams.keys
 }
