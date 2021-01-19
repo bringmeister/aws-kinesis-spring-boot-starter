@@ -58,7 +58,7 @@ class AwsKinesisRecordProcessor<D, M>(
         val context = AwsExecutionContext(shardId = shardId, sequenceNumber = sequenceNumber)
         val json = readJsonFromRecord(awsRecord)
         val record: Record<D, M> = try {
-            recordDeserializer.deserialize(json, partitionKey)
+            recordDeserializer.deserialize(json, partitionKey ?: "")
         } catch (deserializationException: Exception) {
             log.error(
                 "Cannot deserialize record. [stream={}, sequenceNumber={}, partitionKey={}]\n\n{}",
