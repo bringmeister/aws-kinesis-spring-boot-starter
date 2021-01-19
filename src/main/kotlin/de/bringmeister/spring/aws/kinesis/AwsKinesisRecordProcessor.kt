@@ -14,6 +14,7 @@ import software.amazon.kinesis.lifecycle.events.ShutdownRequestedInput
 import software.amazon.kinesis.processor.RecordProcessorCheckpointer
 import software.amazon.kinesis.processor.ShardRecordProcessor
 import software.amazon.kinesis.retrieval.KinesisClientRecord
+import java.nio.charset.Charset
 
 class AwsKinesisRecordProcessor<D, M>(
     private val recordDeserializer: RecordDeserializer<D, M>,
@@ -55,13 +56,13 @@ class AwsKinesisRecordProcessor<D, M>(
         val partitionKey = awsRecord.partitionKey()
         log.trace("Processing record at sequence number <{}> on shard <{}> of <{}>...", sequenceNumber, shardId, handler.stream)
         val context = AwsExecutionContext(shardId = shardId, sequenceNumber = sequenceNumber)
-
+        val json = readJsonFromRecord(awsRecord)
         val record: Record<D, M> = try {
-            recordDeserializer.deserialize(awsRecord)
+            recordDeserializer.deserialize(json, partitionKey)
         } catch (deserializationException: Exception) {
             log.error(
-                "Exception while deserializing record on stream <{}>. [sequenceNumber={}, partitionKey={}]",
-                handler.stream, sequenceNumber, partitionKey, deserializationException
+                "Cannot deserialize record. [stream={}, sequenceNumber={}, partitionKey={}]\n\n{}",
+                handler.stream, sequenceNumber, partitionKey, json, deserializationException
             )
             try {
                 handler.handleDeserializationError(deserializationException, awsRecord.data().asReadOnlyBuffer(), context)
@@ -75,6 +76,12 @@ class AwsKinesisRecordProcessor<D, M>(
         }
 
         handler.handleRecord(record, context)
+    }
+
+    private fun readJsonFromRecord(awsRecord: KinesisClientRecord): String {
+        return Charset.forName("UTF-8")
+            .decode(awsRecord.data().asReadOnlyBuffer())
+            .toString()
     }
 
     private fun checkpoint(checkpointer: RecordProcessorCheckpointer, record: KinesisClientRecord? = null) {
