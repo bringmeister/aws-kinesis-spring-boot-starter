@@ -27,10 +27,13 @@ class ObjectMapperRecordDeserializerFactory(
             val json = Charset.forName("UTF-8")
                 .decode(awsRecord.data().asReadOnlyBuffer())
                 .toString()
-            val record = objectMapper.readValue<Record<D, M>>(json, type)
             val partitionKey = awsRecord.partitionKey() ?: ""
+            return deserialize(json, partitionKey)
+        }
 
-            return Record(record.data, record.metadata, partitionKey)
+        override fun deserialize(json: String, partitionKey: String): Record<D, M> {
+            val record = objectMapper.readValue<Record<D, M>>(json, type)
+            return Record(record.data, record.metadata,partitionKey )
         }
     }
 }
