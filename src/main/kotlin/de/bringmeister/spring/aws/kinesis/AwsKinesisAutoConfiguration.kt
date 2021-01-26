@@ -1,10 +1,11 @@
 package de.bringmeister.spring.aws.kinesis
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import de.bringmeister.spring.aws.kinesis.health.KinesisHealthIndicator
+import de.bringmeister.spring.aws.kinesis.health.KinesisListenerRegisterer
+import de.bringmeister.spring.aws.kinesis.health.KinesisListenerRegistry
 import io.micrometer.core.instrument.MeterRegistry
-import org.springframework.beans.factory.ObjectFactory
 import org.springframework.beans.factory.ObjectProvider
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -15,7 +16,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
-import software.amazon.awssdk.core.SdkSystemSetting
 
 @Configuration
 @AutoConfigureAfter(name = ["org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration"])
@@ -131,5 +131,28 @@ class AwsKinesisAutoConfiguration {
     ): StreamInitializer {
         val kinesisClient = kinesisClientProvider.defaultClient()
         return StreamInitializer(kinesisClient, kinesisSettings)
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    fun kinesisListenerRegistry(): KinesisListenerRegistry {
+        return KinesisListenerRegistry()
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    fun kinesisListenerRegisterer(
+        kinesisRegistry: KinesisListenerRegistry,
+        kinesisListenerProxyFactory: KinesisListenerProxyFactory
+    ): KinesisListenerRegisterer {
+        return KinesisListenerRegisterer(kinesisRegistry, kinesisListenerProxyFactory)
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    fun kinesisHealthIndicator(
+        kinesisRegistry: KinesisListenerRegistry
+    ): KinesisHealthIndicator {
+        return KinesisHealthIndicator(kinesisRegistry)
     }
 }

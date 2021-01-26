@@ -124,12 +124,6 @@
       "name": "aws.kinesis.producer",
       "type": "java.util.List<de.bringmeister.spring.aws.kinesis.StreamSettings>",
       "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings"
-    },
-    {
-      "name": "aws.kinesis.enableHealthIndicator",
-      "type": "java.lang.Boolean",
-      "sourceType": "de.bringmeister.spring.aws.kinesis.AwsKinesisSettings",
-      "defaultValue": false
     }
   ],
   "hints": [

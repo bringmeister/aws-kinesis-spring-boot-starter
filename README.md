@@ -303,16 +303,6 @@ aws:
       disabled: true
 ```
 
-#### Enable health indicator
-If enabled it will extend actuator's health endpoint. 
-Only if all kinesis workers are ready with initialization, health status can be switched to UP.
-
-```yaml
-aws:
-  kinesis:
-    enableHealthIndicator: true
-```
-
 ## Usage
 
 ### Publishing messages

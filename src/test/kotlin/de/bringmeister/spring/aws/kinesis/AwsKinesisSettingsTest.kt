@@ -140,25 +140,4 @@ class AwsKinesisSettingsTest {
         assertThat(settings.dynamoDbSettings).isNull()
         assertThat(settings.createStreams).isTrue()
     }
-
-    @Test
-    fun `should read configuration for health indicator creation`() {
-        val settings = builder<AwsKinesisSettings>()
-            .withPrefix("aws.kinesis")
-            .withProperty("region", "eu-central-1")
-            .withProperty("enableHealthIndicator", "true")
-            .validateUsing(localValidatorFactoryBean)
-            .build()
-        assertThat(settings.enableHealthIndicator).isTrue()
-    }
-
-    @Test
-    fun `should set default configuration for health indicator creation to false`() {
-        val settings = builder<AwsKinesisSettings>()
-            .withPrefix("aws.kinesis")
-            .withProperty("region", "eu-central-1")
-            .validateUsing(localValidatorFactoryBean)
-            .build()
-        assertThat(settings.enableHealthIndicator).isFalse()
-    }
 }
